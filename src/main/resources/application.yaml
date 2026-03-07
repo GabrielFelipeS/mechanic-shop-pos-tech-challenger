@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: pos-tech-challenge-mechanic-shop
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+  springdoc:
+    override-with-generic-response: false
+    swagger-ui:
+      tags-sorter: alpha
+      operations-sorter: alpha
