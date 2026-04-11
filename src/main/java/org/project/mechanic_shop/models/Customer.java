@@ -36,6 +36,4 @@ public class Customer extends BaseAuditEntity {
     @Column(length = 20)
     private String phone;
 
-
-
 }
