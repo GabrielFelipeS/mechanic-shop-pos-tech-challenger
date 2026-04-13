@@ -7,12 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "customers")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Customer extends BaseAuditEntity {
+public class User extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +27,9 @@ public class Customer extends BaseAuditEntity {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @Column()
+    private String role;
+
     @Column(nullable = false)
     private Boolean active;
 
@@ -35,7 +38,4 @@ public class Customer extends BaseAuditEntity {
 
     @Column(length = 20)
     private String phone;
-
-
-
 }

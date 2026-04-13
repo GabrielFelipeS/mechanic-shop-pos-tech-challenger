@@ -1,13 +1,14 @@
-package org.project.mechanic_shop.dto.customer_dto;
+package org.project.mechanic_shop.dto.user_dto;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DTO for {@link org.project.mechanic_shop.models.Customer}
+ * DTO for {@link org.project.mechanic_shop.models.User
+ *}
  */
-public record CustomerShortDto(
+public record UserShortDto(
 
         UUID externalId,
         LocalDateTime createdAt,

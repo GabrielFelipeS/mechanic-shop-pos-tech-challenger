@@ -1,4 +1,4 @@
-package org.project.mechanic_shop.dto.customer_dto;
+package org.project.mechanic_shop.dto.user_dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -8,9 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
- * DTO for {@link org.project.mechanic_shop.models.Customer}
+ * DTO for {@link org.project.mechanic_shop.models.User}
  */
-public record CustomerManDto(
+public record UserManDto(
 
         @NotBlank(message = "Document (CPF/CNPJ) is required.")
         @Size(min = 11, max = 14, message = "Document must be between 11 and 14 characters.")

@@ -18,8 +18,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 
-  springdoc:
+springdoc:
     override-with-generic-response: false
     swagger-ui:
       tags-sorter: alpha
       operations-sorter: alpha
+
+api:
+  security:
+    token:
+      secret: "234235negknsdg#$$@#@#"
