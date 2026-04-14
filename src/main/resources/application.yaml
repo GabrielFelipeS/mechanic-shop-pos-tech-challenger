@@ -28,3 +28,32 @@ api:
   security:
     token:
       secret: "234235negknsdg#$$@#@#"
+
+app:
+  seed:
+    password: ${SEED_DEFAULT_PASSWORD}
+    warehouse:
+      name: ${SEED_WH_NAME}
+      email: ${SEED_WH_EMAIL}
+      document: ${SEED_WH_DOC}
+      role: ${SEED_WH_ROLE}
+    receptionist:
+      name: ${SEED_RC_NAME}
+      email: ${SEED_RC_EMAIL}
+      document: ${SEED_RC_DOC}
+      role: ${SEED_RC_ROLE}
+    mechanic:
+      name: ${SEED_MC_NAME}
+      email: ${SEED_MC_EMAIL}
+      document: ${SEED_MC_DOC}
+      role: ${SEED_MC_ROLE}
+    salesperson:
+      name: ${SEED_SL_NAME}
+      email: ${SEED_SL_EMAIL}
+      document: ${SEED_SL_DOC}
+      role: ${SEED_SL_ROLE}
+    admin:
+      name: ${SEED_AD_NAME}
+      email: ${SEED_AD_EMAIL}
+      document: ${SEED_AD_DOC}
+      role: ${SEED_AD_ROLE}

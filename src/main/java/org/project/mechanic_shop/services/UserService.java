@@ -21,5 +21,5 @@ public interface UserService {
                           String email,
                           Pageable pageable);
 
-    User update(UUID id, User update, UserDetails userAuth);
+    User update(UUID id, User update);
 }

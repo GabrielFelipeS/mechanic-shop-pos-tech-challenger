@@ -9,23 +9,25 @@ import org.project.mechanic_shop.common.responses.ErrorResponse;
 import org.project.mechanic_shop.exception.ApiException;
 import org.project.mechanic_shop.exception.DuplicatedRegisterException;
 import org.project.mechanic_shop.exception.OperationNotPermitted;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestControllerAdvice
@@ -146,7 +148,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(e.getStatus()).body(body);
     }
 
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException e) {
         String message = e.getMostSpecificCause().getMessage();
@@ -195,7 +197,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler(org.springframework.web.reactive.function.client.WebClientResponseException.Conflict.class)
+    @ExceptionHandler(WebClientResponseException.Conflict.class)
     public ResponseEntity<ErrorResponse> handleKeycloakConflict(org.springframework.web.reactive.function.client.WebClientResponseException.Conflict ex) {
 
         log.warn("Attempting to create a duplicate resource in Keycloak: {}", ex.getMessage());
@@ -213,6 +215,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentials() {
 
         ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid email or password", List.of() );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(error);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException() {
+
+        ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Access Denied", List.of() );
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(error);

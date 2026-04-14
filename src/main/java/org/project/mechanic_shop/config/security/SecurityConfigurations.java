@@ -33,7 +33,6 @@ public class SecurityConfigurations {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/users/create").permitAll()
                         .requestMatchers(
                                 "/v2/api-docs/**",
                                 "/v3/api-docs/**",

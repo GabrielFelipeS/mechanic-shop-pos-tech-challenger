@@ -9,7 +9,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
+ @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User extends BaseAuditEntity {

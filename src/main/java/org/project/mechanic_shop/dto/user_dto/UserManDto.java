@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.br.CPF;
+import org.project.mechanic_shop.models.enums.UserRoleEnum;
 
 import java.io.Serializable;
 
@@ -13,6 +15,7 @@ import java.io.Serializable;
 public record UserManDto(
 
         @NotBlank(message = "Document (CPF/CNPJ) is required.")
+        @CPF(message = "Invalid cpf format")
         @Size(min = 11, max = 14, message = "Document must be between 11 and 14 characters.")
         String document,
 
@@ -25,11 +28,14 @@ public record UserManDto(
         @Size(max = 100, message = "Email must not exceed 100 characters.")
         String email,
 
+        @NotNull(message = "Role is required")
+        UserRoleEnum role,
+
         @NotNull(message = "Activation status (active) is required.")
         Boolean active,
 
         @NotBlank(message = "Password is required.")
-        @Size(min = 6, max = 50, message = "Password must be between 6 and 50 characters.")
+        @Size(min = 3, max = 50, message = "Password must be between 3 and 50 characters.")
         String password,
 
         @NotBlank(message = "Phone number is required.")

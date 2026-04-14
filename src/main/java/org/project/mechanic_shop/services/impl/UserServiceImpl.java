@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User update(UUID id, User update, UserDetails userAuth) {
+    public User update(UUID id, User update) {
 
         var obj = repository.findByExternalId(id)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found with id: "+ id));
@@ -93,10 +93,8 @@ public class UserServiceImpl implements UserService {
         obj.setPassword(passwordEncoder.encode(update.getPassword()));
         obj.setPhone(update.getPhone());
         obj.setDocument(update.getDocument());
-
+        obj.setRole(update.getRole());
         obj.setActive(update.getActive());
-        obj.setLastUpdatedFor(userAuth.getUsername());
-
         validator.validate(obj);
 
 

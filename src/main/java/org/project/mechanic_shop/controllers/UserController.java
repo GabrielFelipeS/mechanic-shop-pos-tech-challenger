@@ -1,15 +1,16 @@
 package org.project.mechanic_shop.controllers;
 
-import com.auth0.jwt.JWT;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.common.responses.ApiResponse;
+import org.project.mechanic_shop.dto.user_dto.RoleOptionDto;
 import org.project.mechanic_shop.dto.user_dto.UserDto;
 import org.project.mechanic_shop.dto.user_dto.UserManDto;
 import org.project.mechanic_shop.mappers.UserMapper;
 import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.models.enums.UserRoleEnum;
 import org.project.mechanic_shop.services.UserService;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -18,10 +19,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -37,6 +39,7 @@ public class UserController {
     private static final String SUCCESS_MESSAGE = "success";
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
         log.info("Find user by External ID: {}", id);
 
@@ -51,6 +54,7 @@ public class UserController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     public ResponseEntity<ApiResponse> create(@RequestBody @Valid UserManDto dto) {
         log.info("Try create user with parameters: {}", dto);
 
@@ -66,13 +70,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     public ResponseEntity<ApiResponse> update(@PathVariable UUID id,
-                                              @RequestBody @Valid UserManDto dto, @AuthenticationPrincipal UserDetails userAuth) {
+                                              @RequestBody @Valid UserManDto dto) {
         log.info("Try update user {} with parameters: {}", id, dto);
 
         var userToUpdate =  mapper.toEntity(dto);
 
-        var updatedUser = service.update(id, userToUpdate, userAuth);
+        var updatedUser = service.update(id, userToUpdate);
 
         UserDto userDto = mapper.toDto(updatedUser);
 
@@ -84,6 +89,7 @@ public class UserController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     public ResponseEntity<ApiResponse> search(
             @RequestParam(name = "document", required = false) String document,
             @RequestParam(name = "name", required = false) String name,
@@ -103,6 +109,26 @@ public class UserController {
                 HttpStatus.OK.value(),
                 SUCCESS_MESSAGE,
                 listDto
+        ));
+    }
+
+    @GetMapping("/available-roles")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse> getAvailableRoles() {
+
+        List<RoleOptionDto> roles = Arrays.stream(UserRoleEnum.values())
+                .filter(role -> role != UserRoleEnum.ADMIN)
+                .map(role -> new RoleOptionDto(
+                        role.name(),
+                        role.getLabel(),
+                        role.getDescription()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(new ApiResponse(
+                HttpStatus.OK.value(),
+                SUCCESS_MESSAGE,
+                roles
         ));
     }
 }
