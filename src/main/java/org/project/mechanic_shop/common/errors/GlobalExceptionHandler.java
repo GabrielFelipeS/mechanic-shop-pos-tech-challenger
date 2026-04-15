@@ -189,7 +189,7 @@ public class GlobalExceptionHandler {
             String value = message.substring(message.lastIndexOf('.') + 1);
             String friendlyMessage = String.format("The value '%s' is not accepted for this field.", value);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ErrorResponse.defaultResponse(friendlyMessage));
+                    .body(ErrorResponse.conflict(friendlyMessage));
         }
 
         return ResponseEntity.status(HttpStatus.CONFLICT)

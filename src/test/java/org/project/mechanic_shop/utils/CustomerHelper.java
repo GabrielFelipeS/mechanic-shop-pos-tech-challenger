@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.utils;
 
+import org.project.mechanic_shop.dto.customer_dto.CustomerManDto;
 import org.project.mechanic_shop.models.Customer;
 
 public class CustomerHelper {
@@ -15,4 +16,21 @@ public class CustomerHelper {
                 "553470167400"
         );
     }
+
+    public static CustomerManDto generateCustomerMenDto() {
+        return generateCustomerMenDto(generateCustomer());
+    }
+
+    public static CustomerManDto generateCustomerMenDto(Customer customer) {
+        return new CustomerManDto(
+                customer.getDocument(),
+                customer.getName(),
+                customer.getEmail(),
+                customer.getActive(),
+                customer.getPassword(),
+                customer.getPhone()
+        );
+    }
+
+
 }
