@@ -1,0 +1,37 @@
+package org.project.mechanic_shop.dto.part_dto;
+
+import jakarta.validation.constraints.*;
+import java.io.Serializable;
+import java.math.BigDecimal;
+
+/**
+ * DTO for {@link org.project.mechanic_shop.models.Part}
+ */
+public record PartManDto(
+
+        @NotBlank(message = "Code is required.")
+        @Size(max = 50, message = "Code must not exceed 50 characters.")
+        String code,
+
+        @NotBlank(message = "Name is required.")
+        @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters.")
+        @Pattern(regexp = "^[^<>]*$", message = "HTML tags are not allowed.")
+        String name,
+
+        @Pattern(regexp = "^[^<>]*$", message = "HTML tags are not allowed.")
+        String description,
+
+        @NotNull(message = "Quantity is required.")
+        @Min(value = 0, message = "Quantity cannot be negative.")
+        Integer quantity,
+
+        @NotNull(message = "Cost price is required.")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Cost price cannot be negative.")
+        BigDecimal costPrice,
+
+        @NotNull(message = "Sale price is required.")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Sale price cannot be negative.")
+        BigDecimal salePrice
+
+) implements Serializable {
+}
