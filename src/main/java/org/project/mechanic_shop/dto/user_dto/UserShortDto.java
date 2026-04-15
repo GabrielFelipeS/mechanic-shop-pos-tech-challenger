@@ -14,6 +14,7 @@ public record UserShortDto(
         LocalDateTime createdAt,
         String createdFor,
         LocalDateTime lastUpdatedAt,
+        String lastUpdatedFor,
         String document,
         String name,
         String email,

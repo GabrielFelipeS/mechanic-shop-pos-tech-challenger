@@ -2,37 +2,43 @@ package org.project.mechanic_shop.config.security;
 
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.project.mechanic_shop.models.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 public class UserPrincipal implements UserDetails {
 
-    private final User user;
+    private final String username;
+    private final String password;
+    private final Boolean enabled;
+    private final Collection<? extends GrantedAuthority> authorities;
+
+    public UserPrincipal(org.project.mechanic_shop.models.User user) {
+        this.username = user.getEmail();
+        this.password = user.getPassword();
+        this.enabled = user.getActive();
+        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+    }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<String> roles = new ArrayList<>();
-        roles.add("ROLE_" + user.getRole());
-        return roles.stream().map(SimpleGrantedAuthority::new).toList();
+
+        return this.authorities;
     }
 
     @Override
     public @Nullable String getPassword() {
-        return user.getPassword();
+        return this.password;
     }
 
     @Override
     public String getUsername() {
-        return user.getEmail();
+        return this.username;
     }
 
     @Override
@@ -52,6 +58,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getActive();
+        return this.enabled;
     }
 }

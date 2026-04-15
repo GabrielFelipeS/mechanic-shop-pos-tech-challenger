@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -38,4 +41,7 @@ public class User extends BaseAuditEntity {
 
     @Column(length = 20)
     private String phone;
+
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    Set<Vehicle> vehicles = new LinkedHashSet<>();
 }

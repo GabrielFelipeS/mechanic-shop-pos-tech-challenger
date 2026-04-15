@@ -1,7 +1,10 @@
 package org.project.mechanic_shop.dto.user_dto;
 
+import org.project.mechanic_shop.dto.vehicle_dto.VehicleShortDto;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -18,7 +21,8 @@ public record UserDto(
         String name,
         String email,
         Boolean active,
-        String phone
+        String phone,
+        List<VehicleShortDto>vehicles
 
 ) implements Serializable {
 

@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.project.mechanic_shop.common.responses.ApiResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Auth login")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
