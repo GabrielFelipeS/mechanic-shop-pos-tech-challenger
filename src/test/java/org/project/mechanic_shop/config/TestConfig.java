@@ -1,26 +1,28 @@
 package org.project.mechanic_shop.config;
 
 import org.mockito.Mockito;
-import org.project.mechanic_shop.mappers.CustomerMapper;
-import org.project.mechanic_shop.repositories.CustomerRepository;
-import org.project.mechanic_shop.services.CustomerService;
+import org.project.mechanic_shop.mappers.UserMapper;
+import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.services.UserService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 @TestConfiguration
 public class TestConfig {
     @Bean
-    CustomerService customerService() {
-        return Mockito.mock(CustomerService.class);
+    UserService userService() {
+        return Mockito.mock(UserService.class);
     }
 
     @Bean
-    CustomerMapper customerMapper() {
-        return Mockito.mock(CustomerMapper.class);
+    UserMapper userMapper() {
+        return Mockito.mock(UserMapper.class);
     }
 
     @Bean
-    CustomerRepository customerRepository() {
-        return Mockito.mock(CustomerRepository.class);
+    UserRepository userRepository() {
+        return Mockito.mock(UserRepository.class);
     }
+
+
 }

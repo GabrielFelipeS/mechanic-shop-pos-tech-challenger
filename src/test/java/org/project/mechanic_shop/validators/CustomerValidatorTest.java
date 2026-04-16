@@ -7,8 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.repositories.CustomerRepository;
-import org.project.mechanic_shop.utils.CustomerHelper;
+import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.utils.UserHelper;
 
 import java.util.Optional;
 
@@ -17,145 +17,145 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CustomerValidatorTest {
+class UserValidatorTest {
 
-    private CustomerValidator customerValidator;
+    private UserValidator userValidator;
     @Mock
-    private CustomerRepository customerRepository;
+    private UserRepository userRepository;
 
     @BeforeEach
     void beforeEach() {
-        customerValidator = new CustomerValidator(customerRepository);
+        userValidator = new UserValidator(userRepository);
     }
 
     @Nested
     class Validate {
         @Test
-        void shouldNotThrowExceptionWhenCustomerIsSame() {
-            var customer = CustomerHelper.generateCustomer();
+        void shouldNotThrowExceptionWhenUserIsSame() {
+            var user = UserHelper.generateUser();
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.of(customer));
-            when(customerRepository.findByEmail(customer.getEmail())).thenReturn(Optional.of(customer));
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(user));
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 
-            assertDoesNotThrow(() -> customerValidator.validate(customer));
+            assertDoesNotThrow(() -> userValidator.validate(user));
 
-            InOrder inOrder = inOrder(customerRepository);
+            InOrder inOrder = inOrder(userRepository);
 
-            inOrder.verify(customerRepository).findByDocument(customer.getDocument());
-            inOrder.verify(customerRepository).findByEmail(customer.getEmail());
+            inOrder.verify(userRepository).findByDocument(user.getDocument());
+            inOrder.verify(userRepository).findByEmail(user.getEmail());
         }
 
         @Test
-        void shouldNotThrowExceptionWhenCustomerDoesNotExists() {
-            var customer = CustomerHelper.generateCustomer();
+        void shouldNotThrowExceptionWhenUserDoesNotExists() {
+            var user = UserHelper.generateUser();
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.empty());
-            when(customerRepository.findByEmail(customer.getEmail())).thenReturn(Optional.empty());
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
 
-            assertDoesNotThrow(() -> customerValidator.validate(customer));
+            assertDoesNotThrow(() -> userValidator.validate(user));
 
-            InOrder inOrder = inOrder(customerRepository);
+            InOrder inOrder = inOrder(userRepository);
 
-            inOrder.verify(customerRepository).findByDocument(customer.getDocument());
-            inOrder.verify(customerRepository).findByEmail(customer.getEmail());
+            inOrder.verify(userRepository).findByDocument(user.getDocument());
+            inOrder.verify(userRepository).findByEmail(user.getEmail());
         }
 
         @Test
-        void shouldThrowExceptionWhenAlreadyExistsCustomerWithDocument() {
-            var customer = CustomerHelper.generateCustomer();
-            customer.setId(null);
+        void shouldThrowExceptionWhenAlreadyExistsUserWithDocument() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
 
-            var alreadyCustomer = CustomerHelper.generateCustomer();
+            var alreadyUser = UserHelper.generateUser();
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.of(alreadyCustomer));
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(alreadyUser));
 
-            assertThatThrownBy(() -> customerValidator.validate(customer))
+            assertThatThrownBy(() -> userValidator.validate(user))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage(String.format("A Customer with this document already exists: %s", customer.getDocument()));
+                    .hasMessage(String.format("A User with this document already exists: %s", user.getDocument()));
 
-            verify(customerRepository).findByDocument(alreadyCustomer.getDocument());
-            verify(customerRepository, never()).findByEmail(alreadyCustomer.getEmail());
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository, never()).findByEmail(alreadyUser.getEmail());
         }
 
         @Test
-        void shouldThrowExceptionWhenAlreadyCustomerWithDocumentHaveDifferentId() {
-            var customer = CustomerHelper.generateCustomer();
-            var alreadyCustomer = CustomerHelper.generateCustomer();
-            alreadyCustomer.setId(2L);
+        void shouldThrowExceptionWhenAlreadyUserWithDocumentHaveDifferentId() {
+            var user = UserHelper.generateUser();
+            var alreadyUser = UserHelper.generateUser();
+            alreadyUser.setId(2L);
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.of(alreadyCustomer));
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(alreadyUser));
 
-            assertThatThrownBy(() -> customerValidator.validate(customer))
+            assertThatThrownBy(() -> userValidator.validate(user))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage(String.format("A Customer with this document already exists: %s", customer.getDocument()));
+                    .hasMessage(String.format("A User with this document already exists: %s", user.getDocument()));
 
-            verify(customerRepository).findByDocument(alreadyCustomer.getDocument());
-            verify(customerRepository, never()).findByEmail(alreadyCustomer.getEmail());
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository, never()).findByEmail(alreadyUser.getEmail());
         }
 
         @Test
-        void shouldThrowExceptionWhenAlreadyExistsCustomerWithEmail() {
-            var customer = CustomerHelper.generateCustomer();
-            customer.setId(null);
+        void shouldThrowExceptionWhenAlreadyExistsUserWithEmail() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
 
-            var alreadyCustomer = CustomerHelper.generateCustomer();
+            var alreadyUser = UserHelper.generateUser();
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.empty());
-            when(customerRepository.findByEmail(customer.getEmail())).thenReturn(Optional.of(alreadyCustomer));
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(alreadyUser));
 
-            assertThatThrownBy(() -> customerValidator.validate(customer))
+            assertThatThrownBy(() -> userValidator.validate(user))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage(String.format("A Customer with this email already exists: %s", customer.getEmail()));
+                    .hasMessage(String.format("A User with this email already exists: %s", user.getEmail()));
 
-            InOrder inOrder = inOrder(customerRepository);
+            InOrder inOrder = inOrder(userRepository);
 
-            inOrder.verify(customerRepository).findByDocument(alreadyCustomer.getDocument());
-            inOrder.verify(customerRepository).findByEmail(alreadyCustomer.getEmail());
+            inOrder.verify(userRepository).findByDocument(alreadyUser.getDocument());
+            inOrder.verify(userRepository).findByEmail(alreadyUser.getEmail());
         }
 
         @Test
-        void shouldThrowExceptionWhenAlreadyCustomerWithEmailHaveDifferentId() {
-            var customer = CustomerHelper.generateCustomer();
-            var alreadyCustomer = CustomerHelper.generateCustomer();
-            alreadyCustomer.setId(2L);
+        void shouldThrowExceptionWhenAlreadyUserWithEmailHaveDifferentId() {
+            var user = UserHelper.generateUser();
+            var alreadyUser = UserHelper.generateUser();
+            alreadyUser.setId(2L);
 
-            when(customerRepository.findByDocument(customer.getDocument())).thenReturn(Optional.empty());
-            when(customerRepository.findByEmail(customer.getEmail())).thenReturn(Optional.of(alreadyCustomer));
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(alreadyUser));
 
-            assertThatThrownBy(() -> customerValidator.validate(customer))
+            assertThatThrownBy(() -> userValidator.validate(user))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage(String.format("A Customer with this email already exists: %s", customer.getEmail()));
+                    .hasMessage(String.format("A User with this email already exists: %s", user.getEmail()));
 
-            verify(customerRepository).findByDocument(alreadyCustomer.getDocument());
-            verify(customerRepository).findByEmail(alreadyCustomer.getEmail());
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository).findByEmail(alreadyUser.getEmail());
         }
     }
 
     @Nested
     class ValidateUpdateEligibility {
         @Test
-        void shouldNotThrowWhenCustomerAlreadyExitsIdAndIsActive() {
-            var customer = CustomerHelper.generateCustomer();
+        void shouldNotThrowWhenUserAlreadyExitsIdAndIsActive() {
+            var user = UserHelper.generateUser();
 
-            assertDoesNotThrow(() -> customerValidator.validateUpdateEligibility(customer));
+            assertDoesNotThrow(() -> userValidator.validateUpdateEligibility(user));
         }
 
         @Test
-        void shouldThrowWhenCustomerDoesNotHaveId() {
-            var customer = CustomerHelper.generateCustomer();
-            customer.setId(null);
+        void shouldThrowWhenUserDoesNotHaveId() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
 
-            assertThatThrownBy(() -> customerValidator.validateUpdateEligibility(customer))
+            assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("You cannot update an object without an ID");
         }
 
         @Test
-        void shouldThrowWhenCustomerIsNotActive() {
-            var customer = CustomerHelper.generateCustomer();
-            customer.setActive(false);
+        void shouldThrowWhenUserIsNotActive() {
+            var user = UserHelper.generateUser();
+            user.setActive(false);
 
-            assertThatThrownBy(() -> customerValidator.validateUpdateEligibility(customer))
+            assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("You cannot update an inactive object");
         }

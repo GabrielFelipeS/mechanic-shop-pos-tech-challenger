@@ -36,8 +36,6 @@ public class AuthController {
         assert userPrincipal != null;
         var token = tokenService.generateToken(userPrincipal.getUsername());
 
-
-
         return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), successMessage, token));
     }
 

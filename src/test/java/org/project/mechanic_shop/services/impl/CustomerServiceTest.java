@@ -13,11 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.models.Customer;
-import org.project.mechanic_shop.repositories.CustomerRepository;
-import org.project.mechanic_shop.services.CustomerService;
-import org.project.mechanic_shop.utils.CustomerHelper;
-import org.project.mechanic_shop.validators.CustomerValidator;
+import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.utils.UserHelper;
+import org.project.mechanic_shop.validators.UserValidator;
 import org.springframework.data.domain.*;
 
 import java.util.List;
@@ -27,86 +27,86 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CustomerServiceTest {
+class UserServiceTest {
 
-    private CustomerService customerService;
-
-    @Mock
-    private CustomerRepository customerRepository;
+    private UserService userService;
 
     @Mock
-    private CustomerValidator customerValidator;
+    private UserRepository userRepository;
+
+    @Mock
+    private UserValidator userValidator;
 
     @BeforeEach
     void setup() {
-        customerService = new CustomerServiceImpl(customerRepository, customerValidator);
+        userService = new UserServiceImpl(userRepository, userValidator);
     }
 
     @Nested
     class Create {
         @Test
-        void shouldCreateCustomer() {
-            var customer = CustomerHelper.generateCustomer();
+        void shouldCreateUser() {
+            var user = UserHelper.generateUser();
 
-            when(customerRepository.save(customer))
-                    .thenReturn(customer);
+            when(userRepository.save(user))
+                    .thenReturn(user);
 
-            var customerSave = customerService.create(customer);
+            var userSave = userService.create(user);
 
-            InOrder inOrder = inOrder(customerValidator, customerRepository);
+            InOrder inOrder = inOrder(userValidator, userRepository);
 
-            inOrder.verify(customerValidator).validate(customer);
-            inOrder.verify(customerRepository).save(customer);
+            inOrder.verify(userValidator).validate(user);
+            inOrder.verify(userRepository).save(user);
 
-            assertThat(customerSave)
+            assertThat(userSave)
                     .usingRecursiveAssertion()
                     .ignoringAllNullFields()
-                    .isEqualTo(customer);
+                    .isEqualTo(user);
         }
 
         @Test
         void shouldNotSaveWhenValidationFails() {
-            var customer = CustomerHelper.generateCustomer();
+            var user = UserHelper.generateUser();
 
             doThrow(new IllegalArgumentException())
-                    .when(customerValidator).validate(customer);
+                    .when(userValidator).validate(user);
 
-            assertThatThrownBy(() -> customerService.create(customer))
+            assertThatThrownBy(() -> userService.create(user))
                     .isInstanceOf(IllegalArgumentException.class);
 
-            verify(customerRepository, never()).save(any());
+            verify(userRepository, never()).save(any());
         }
     }
 
     @Nested
     class FindByExternalId {
         @Test
-        void shouldFindCustomerByExternalId() {
+        void shouldFindUserByExternalId() {
             UUID externalId = UUID.randomUUID();
-            var customer = CustomerHelper.generateCustomer();
+            var user = UserHelper.generateUser();
 
-            when(customerRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(customer));
+            when(userRepository.findByExternalId(externalId))
+                    .thenReturn(Optional.of(user));
 
-            var customerFind = customerService.findByExternalId(externalId);
+            var userFind = userService.findByExternalId(externalId);
 
-            assertThat(customerFind)
+            assertThat(userFind)
                     .usingRecursiveAssertion()
-                    .isEqualTo(customer);
+                    .isEqualTo(user);
 
-            verify(customerRepository).findByExternalId(externalId);
+            verify(userRepository).findByExternalId(externalId);
         }
 
         @Test
-        void shouldThrowExceptionWhenCustomerNotFound() {
+        void shouldThrowExceptionWhenUserNotFound() {
             UUID externalId = UUID.randomUUID();
 
-            when(customerRepository.findByExternalId(externalId))
+            when(userRepository.findByExternalId(externalId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> customerService.findByExternalId(externalId))
+            assertThatThrownBy(() -> userService.findByExternalId(externalId))
                     .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage(String.format("Customer not found for External ID: %s", externalId));
+                    .hasMessage(String.format("User not found for External ID: %s", externalId));
         }
     }
 
@@ -114,117 +114,117 @@ class CustomerServiceTest {
     class Update {
 
         @Test
-        void shouldUpdateCustomerWhenExists() {
+        void shouldUpdateUserWhenExists() {
             UUID externalId = UUID.randomUUID();
-            var customerFind = CustomerHelper.generateCustomer();
+            var userFind = UserHelper.generateUser();
 
-            var customerToUpdate = CustomerHelper.generateCustomer();
-            customerToUpdate.setName("NOME_ATUALIZADO");
-            customerToUpdate.setActive(false);
+            var userToUpdate = UserHelper.generateUser();
+            userToUpdate.setName("NOME_ATUALIZADO");
+            userToUpdate.setActive(false);
 
-            when(customerRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(customerFind));
+            when(userRepository.findByExternalId(externalId))
+                    .thenReturn(Optional.of(userFind));
 
-            when(customerRepository.save(any()))
+            when(userRepository.save(any()))
                     .thenAnswer(invocation -> invocation.getArgument(0));
 
-            var customerUpdated = customerService.update(externalId, customerToUpdate);
+            var userUpdated = userService.update(externalId, userToUpdate);
 
-            assertThat(customerUpdated.getName()).isEqualTo("NOME_ATUALIZADO");
-            assertThat(customerUpdated.getPassword())
+            assertThat(userUpdated.getName()).isEqualTo("NOME_ATUALIZADO");
+            assertThat(userUpdated.getPassword())
                     .isEqualTo("Teste@123");
-            assertThat(customerUpdated.getActive()).isFalse();
+            assertThat(userUpdated.getActive()).isFalse();
 
-            assertThat(customerUpdated.getEmail())
-                    .isEqualTo(customerFind.getEmail());
+            assertThat(userUpdated.getEmail())
+                    .isEqualTo(userFind.getEmail());
 
-            InOrder inOrder = inOrder(customerRepository, customerValidator, customerRepository);
+            InOrder inOrder = inOrder(userRepository, userValidator, userRepository);
 
-            inOrder.verify(customerRepository).findByExternalId(externalId);
-            inOrder.verify(customerValidator).validateUpdateEligibility(customerFind);
-            inOrder.verify(customerValidator).validate(customerFind);
-            inOrder.verify(customerRepository).save(customerFind);
+            inOrder.verify(userRepository).findByExternalId(externalId);
+            inOrder.verify(userValidator).validateUpdateEligibility(userFind);
+            inOrder.verify(userValidator).validate(userFind);
+            inOrder.verify(userRepository).save(userFind);
         }
 
         @Test
-        void shouldThrowExceptionWhenCustomerToUpdateNotFound() {
+        void shouldThrowExceptionWhenUserToUpdateNotFound() {
             UUID externalId = UUID.randomUUID();
-            var customer = CustomerHelper.generateCustomer();
+            var user = UserHelper.generateUser();
 
-            when(customerRepository.findByExternalId(externalId))
+            when(userRepository.findByExternalId(externalId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> customerService.update(externalId, customer))
+            assertThatThrownBy(() -> userService.update(externalId, user))
                     .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage(String.format("Customer not found for External ID: %s", externalId));
+                    .hasMessage(String.format("User not found with External ID: %s", externalId));
         }
 
         @Test
         void shouldNotUpdateWhenValidationFails() {
             UUID externalId = UUID.randomUUID();
-            var customerFind = CustomerHelper.generateCustomer();
-            var customerToUpdate = CustomerHelper.generateCustomer();
+            var userFind = UserHelper.generateUser();
+            var userToUpdate = UserHelper.generateUser();
 
-            when(customerRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(customerFind));
+            when(userRepository.findByExternalId(externalId))
+                    .thenReturn(Optional.of(userFind));
 
             doThrow(new IllegalArgumentException())
-                    .when(customerValidator).validate(customerFind);
+                    .when(userValidator).validate(userFind);
 
-            assertThatThrownBy(() -> customerService.update(externalId, customerToUpdate)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> userService.update(externalId, userToUpdate)).isInstanceOf(IllegalArgumentException.class);
 
-            verify(customerRepository, never()).save(any());
+            verify(userRepository, never()).save(any());
         }
     }
 
     @Nested
     class Search {
         @SuppressWarnings("unchecked")
-        private ArgumentCaptor<Example<Customer>> exampleCustomerCaptor() {
-            return (ArgumentCaptor<Example<Customer>>) (ArgumentCaptor<?>)
+        private ArgumentCaptor<Example<User>> exampleUserCaptor() {
+            return (ArgumentCaptor<Example<User>>) (ArgumentCaptor<?>)
                     ArgumentCaptor.forClass(Example.class);
         }
 
         @SuppressWarnings("unchecked")
-        private Example<Customer> getAnyExample() {
+        private Example<User> getAnyExample() {
             return any(Example.class);
         }
 
         @Test
-        void shouldReturnCustomersWhenSearchCriteriaIsProvided() {
-            var customer = CustomerHelper.generateCustomer();
-            Customer expected = new Customer();
-            expected.setDocument(customer.getDocument());
-            expected.setName(customer.getName());
-            expected.setEmail(customer.getEmail());
+        void shouldReturnUsersWhenSearchCriteriaIsProvided() {
+            var user = UserHelper.generateUser();
+            User expected = new User();
+            expected.setDocument(user.getDocument());
+            expected.setName(user.getName());
+            expected.setEmail(user.getEmail());
 
-            ArgumentCaptor<Example<Customer>> captor = exampleCustomerCaptor();
+            ArgumentCaptor<Example<User>> captor = exampleUserCaptor();
 
             Pageable pageable = PageRequest.of(0, 10);
 
-            Page<Customer> expectedPage = new PageImpl<>(List.of(customer));
+            Page<User> expectedPage = new PageImpl<>(List.of(user));
 
-            when(customerRepository.findAll(getAnyExample(), eq(pageable)))
+            when(userRepository.findAll(getAnyExample(), eq(pageable)))
                     .thenReturn(expectedPage);
 
-            var customerPage = customerService.search(
-                    customer.getDocument(),
-                    customer.getName(),
-                    customer.getEmail(),
+            var userPage = userService.search(
+                    user.getDocument(),
+                    user.getName(),
+                    user.getEmail(),
                     pageable
             );
 
-            assertThat(customerPage).isEqualTo(expectedPage);
+            assertThat(userPage).isEqualTo(expectedPage);
 
-            verify(customerRepository).findAll(captor.capture(), eq(pageable));
+            verify(userRepository).findAll(captor.capture(), eq(pageable));
 
-            Example<Customer> capturedExample = captor.getValue();
+            Example<User> capturedExample = captor.getValue();
 
-            Customer probe = capturedExample.getProbe();
+            User probe = capturedExample.getProbe();
 
-            assertThat(probe.getDocument()).isEqualTo(customer.getDocument());
-            assertThat(probe.getName()).isEqualTo(customer.getName());
-            assertThat(probe.getEmail()).isEqualTo(customer.getEmail());
+            assertThat(probe.getDocument()).isEqualTo(user.getDocument());
+            assertThat(probe.getName()).isEqualTo(user.getName());
+            assertThat(probe.getEmail()).isEqualTo(user.getEmail());
         }
     }
 }

@@ -3,10 +3,10 @@ package org.project.mechanic_shop.services.impl;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.project.mechanic_shop.models.Customer;
-import org.project.mechanic_shop.repositories.CustomerRepository;
-import org.project.mechanic_shop.services.CustomerService;
-import org.project.mechanic_shop.validators.CustomerValidator;
+import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.validators.UserValidator;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -19,15 +19,15 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CustomerServiceImpl implements CustomerService {
+public class UserServiceImpl implements UserService {
 
-    private final CustomerRepository repository;
-    private final CustomerValidator validator;
+    private final UserRepository repository;
+    private final UserValidator validator;
 
     @Override
     @Transactional
-    public Customer create(Customer obj) {
-        log.info("Creating new customer with document: {}", obj.getDocument());
+    public User create(User obj) {
+        log.info("Creating new User with document: {}", obj.getDocument());
 
         validator.validate(obj);
 
@@ -36,22 +36,22 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional(readOnly = true)
-    public Customer findByExternalId(UUID externalId) {
+    public User findByExternalId(UUID externalId) {
         return repository.findByExternalId(externalId).orElseThrow(() -> {
-            log.warn("Customer not found. Action: GET | Target External ID: {}", externalId);
-            return new EntityNotFoundException("Customer not found for External ID: " + externalId);
+            log.warn("User not found. Action: GET | Target External ID: {}", externalId);
+            return new EntityNotFoundException("User not found for External ID: " + externalId);
         });
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Customer> search(String document, String name, String email, Pageable pageable) {
-        log.info("Searching customers with filters - document: {}, name: {}, email: {}", document, name, email);
+    public Page<User> search(String document, String name, String email, Pageable pageable) {
+        log.info("Searching Users with filters - document: {}, name: {}, email: {}", document, name, email);
 
-        var customer = new Customer();
-        customer.setDocument(document);
-        customer.setName(name);
-        customer.setEmail(email);
+        var user = new User();
+        user.setDocument(document);
+        user.setName(name);
+        user.setEmail(email);
 
         ExampleMatcher matcher = ExampleMatcher.matching()
                 .withIgnorePaths(
@@ -67,19 +67,19 @@ public class CustomerServiceImpl implements CustomerService {
                 .withIgnoreCase()
                 .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
 
-        Example<Customer> example = Example.of(customer, matcher);
+        Example<User> example = Example.of(user, matcher);
 
         return repository.findAll(example, pageable);
     }
 
     @Override
     @Transactional
-    public Customer update(UUID id, Customer update) {
+    public User update(UUID externalId, User update) {
 
-        var obj = repository.findByExternalId(id)
-                .orElseThrow(() -> new EntityNotFoundException("Customer not found with id: "+ id));
+        var obj = repository.findByExternalId(externalId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with External ID: "+ externalId));
 
-        log.info("Updating customer with ID: {}", obj.getId());
+        log.info("Updating User with ID: {}", obj.getId());
 
         validator.validateUpdateEligibility(obj);
 
