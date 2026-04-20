@@ -107,7 +107,7 @@ public class StockItemServiceImpl implements StockItemService {
             item.setQuantity(0);
             item.setPendingDemand(item.getPendingDemand() + missingQuantity);
 
-            eventPublisher.publishEvent(new OutOfStockEvent(item, missingQuantity));
+            eventPublisher.publishEvent(new OutOfStockEvent(item, item.getPendingDemand()));
         } else {
             item.setQuantity(currentStock - requestedQuantity);
         }
