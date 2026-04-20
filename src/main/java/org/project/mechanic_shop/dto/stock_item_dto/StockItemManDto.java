@@ -1,13 +1,16 @@
-package org.project.mechanic_shop.dto.part_dto;
+package org.project.mechanic_shop.dto.stock_item_dto;
 
 import jakarta.validation.constraints.*;
+import org.project.mechanic_shop.models.StockItem;
+import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * DTO for {@link org.project.mechanic_shop.models.Part}
+ * DTO for {@link StockItem}
  */
-public record PartManDto(
+public record StockItemManDto(
 
         @NotBlank(message = "Code is required.")
         @Size(max = 50, message = "Code must not exceed 50 characters.")
@@ -17,6 +20,9 @@ public record PartManDto(
         @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters.")
         @Pattern(regexp = "^[^<>]*$", message = "HTML tags are not allowed.")
         String name,
+
+        @NotNull(message = "Type is required (PART or CONSUMABLE).")
+        StockItemTypeEnum type,
 
         @Pattern(regexp = "^[^<>]*$", message = "HTML tags are not allowed.")
         String description,

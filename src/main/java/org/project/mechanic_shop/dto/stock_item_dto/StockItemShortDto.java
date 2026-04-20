@@ -1,25 +1,26 @@
-package org.project.mechanic_shop.dto.part_dto;
+package org.project.mechanic_shop.dto.stock_item_dto;
+
+import org.project.mechanic_shop.models.StockItem;
+import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 /**
- * DTO for {@link org.project.mechanic_shop.models.Part}
+ * DTO for {@link StockItem}
  */
-public record PartDto(
+public record StockItemShortDto(
         UUID externalId,
         LocalDateTime createdAt,
         String createdFor,
+        StockItemTypeEnum type,
         LocalDateTime lastUpdatedAt,
         String lastUpdatedFor,
         String code,
         String name,
-        String description,
         Integer quantity,
-        BigDecimal costPrice,
         BigDecimal salePrice
 ) implements Serializable {
 }

@@ -1,15 +1,17 @@
 package org.project.mechanic_shop.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.common.responses.ApiResponse;
-import org.project.mechanic_shop.dto.part_dto.PartDto;
-import org.project.mechanic_shop.dto.part_dto.PartManDto;
-import org.project.mechanic_shop.mappers.PartMapper;
-import org.project.mechanic_shop.models.Part;
-import org.project.mechanic_shop.services.PartService;
+import org.project.mechanic_shop.dto.stock_item_dto.StockItemDto;
+import org.project.mechanic_shop.dto.stock_item_dto.StockItemManDto;
+import org.project.mechanic_shop.dto.stock_item_dto.StockWithdrawalDto;
+import org.project.mechanic_shop.mappers.StockItemMapper;
+import org.project.mechanic_shop.models.StockItem;
+import org.project.mechanic_shop.services.StockItemService;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,14 +25,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/parts")
+@RequestMapping("/api/stock-items")
 @RequiredArgsConstructor
-@Tag(name = "Part Management")
+@Tag(name = "Stock Item Management")
 @Slf4j
-public class PartController {
+public class StockItemController {
 
-    private final PartService service;
-    private final PartMapper mapper;
+    private final StockItemService service;
+    private final StockItemMapper mapper;
 
     private static final String SUCCESS_MESSAGE = "success";
 
@@ -51,11 +53,11 @@ public class PartController {
 
     @PostMapping("/create")
     @PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN')")
-    public ResponseEntity<ApiResponse> create(@RequestBody @Valid PartManDto dto) {
+    public ResponseEntity<ApiResponse> create(@RequestBody @Valid StockItemManDto dto) {
         log.info("Try create part with parameters: {}", dto);
 
-        Part part = mapper.toEntity(dto);
-        var partCreated = service.create(part);
+        StockItem stockItem = mapper.toEntity(dto);
+        var partCreated = service.create(stockItem);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(
                 HttpStatus.CREATED.value(),
@@ -67,12 +69,12 @@ public class PartController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN')")
     public ResponseEntity<ApiResponse> update(@PathVariable UUID id,
-                                              @RequestBody @Valid PartManDto dto) {
+                                              @RequestBody @Valid StockItemManDto dto) {
         log.info("Try update part {} with parameters: {}", id, dto);
 
-        var partToUpdate = mapper.toEntity(dto);
-        var updatedPart = service.update(id, partToUpdate);
-        PartDto partDto = mapper.toDto(updatedPart);
+        var stockItemToUpdate = mapper.toEntity(dto);
+        var updatedStockItem = service.update(id, stockItemToUpdate);
+        StockItemDto partDto = mapper.toDto(updatedStockItem);
 
         return ResponseEntity.ok().body(new ApiResponse(
                 HttpStatus.OK.value(),
@@ -93,7 +95,7 @@ public class PartController {
 
         log.info("Search parts with filters");
 
-        Page<Part> parts = service.search(code, name, pageable);
+        Page<StockItem> parts = service.search(code, name, pageable);
         var listDto = parts.map(mapper::toShortDto);
 
         return ResponseEntity.ok().body(new ApiResponse(
@@ -101,5 +103,22 @@ public class PartController {
                 SUCCESS_MESSAGE,
                 listDto
         ));
+    }
+
+    @Operation(summary = "Withdraw stock (Reduce inventory)",
+            description = "It deducts the specified quantity from the current stock. If an item is missing, it sends an alert to the warehouse staff.")
+    @PatchMapping("/{id}/withdraw")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC', 'WAREHOUSE_CLERK')")
+    public ResponseEntity<ApiResponse> withdrawStock(
+            @PathVariable UUID id,
+            @RequestBody @Valid StockWithdrawalDto dto) {
+
+        log.info("API Request: Withdraw {} units from item {}", dto.quantity(), id);
+
+        service.withdrawStock(id, dto.quantity());
+
+        return ResponseEntity.ok(
+                new ApiResponse(HttpStatus.OK.value(), "Inventory updated successfully.", null)
+        );
     }
 }
