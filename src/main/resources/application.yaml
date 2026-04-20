@@ -13,6 +13,18 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${SMTP_USERNAME:mock@mechanicshop.com}
+    password: ${SMTP_PASSWORD}
+    active: ${SMTP_ACTIVE:false}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 
 springdoc:
