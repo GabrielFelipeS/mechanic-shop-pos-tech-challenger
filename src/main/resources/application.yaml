@@ -66,3 +66,8 @@ app:
       email: ${SEED_AD_EMAIL:''}
       document: ${SEED_AD_DOC:''}
       role: ${SEED_AD_ROLE:''}
+    buyer:
+      name: ${SEED_BY_NAME:'Buyer Default'}
+      email: ${SEED_BY_EMAIL:'compras@shop.com'}
+      document: ${SEED_BY_DOC:'BY_001'}
+      role: ${SEED_BY_ROLE:''}

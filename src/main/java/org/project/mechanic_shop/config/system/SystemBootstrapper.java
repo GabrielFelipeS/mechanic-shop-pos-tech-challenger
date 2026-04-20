@@ -47,6 +47,11 @@ public class SystemBootstrapper {
     @Value("${app.seed.admin.document}") private String adDoc;
     @Value("${app.seed.admin.role}") private String adRole;
 
+    @Value("${app.seed.buyer.name}") private String byName;
+    @Value("${app.seed.buyer.email}") private String byEmail;
+    @Value("${app.seed.buyer.document}") private String byDoc;
+    @Value("${app.seed.buyer.role}") private String byRole;
+
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void onApplicationReady() {
@@ -57,7 +62,8 @@ public class SystemBootstrapper {
                 {whRole, whEmail, whDoc, whName},
                 {rcRole, rcEmail, rcDoc, rcName},
                 {mcRole, mcEmail, mcDoc, mcName},
-                {slRole, slEmail, slDoc, slName}
+                {slRole, slEmail, slDoc, slName},
+                {byRole, byEmail, byDoc, byName}
         };
 
         boolean usersCreated = false;

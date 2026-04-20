@@ -17,7 +17,9 @@ public enum UserRoleEnum {
 
     CUSTOMER("Customer", "Client of the mechanic shop."),
 
-    ADMIN("Admin", "System administrator with full access to all modules.");
+    ADMIN("Admin", "System administrator with full access to all modules."),
+
+    BUYER("Buyer", "Responsible for purchasing parts and managing supplier relationships.");
 
     private final String label;
     private final String description;

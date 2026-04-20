@@ -3,10 +3,15 @@ package org.project.mechanic_shop.listeners;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.events.OutOfStockEvent;
+import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.models.enums.UserRoleEnum; // Importação corrigida para o seu Enum
+import org.project.mechanic_shop.repositories.UserRepository;
 import org.project.mechanic_shop.services.EmailService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @Slf4j
@@ -14,23 +19,32 @@ import org.springframework.stereotype.Component;
 public class StockNotificationListener {
 
     private final EmailService emailService;
+    private final UserRepository userRepository;
 
     @Async
     @EventListener
     public void handleOutOfStockEvent(OutOfStockEvent event) {
-
-
-
         var item = event.item();
         var missingQuantity = event.missingQuantity();
 
         log.warn("[EVENT RECEIVED] Alert processing for item: {}", item.getCode());
 
-        String to = "compras@mechanicshop.com";
-        String subject = "URGENTE: Reposição Necessária - " + item.getCode();
+        String subject = "URGENT: Restock Required - " + item.getCode();
         String body = String.format("O item '%s' (%s) atingiu saldo zero. Precisamos de pelo menos %d unidade(s).",
                 item.getName(), item.getType(), missingQuantity);
 
-        emailService.sendEmail(to, subject, body);
+        List<String> targetRoles = List.of(UserRoleEnum.WAREHOUSE_CLERK.name(), UserRoleEnum.BUYER.name());
+
+        List<User> notificationTargets = userRepository.findByRoleIn(targetRoles);
+
+        if (notificationTargets.isEmpty()) {
+            log.error("No users found with roles {} to receive the stock alert!", targetRoles);
+            return;
+        }
+
+        for (User targetUser : notificationTargets) {
+            log.info("Sending stock notification to: {} ({})", targetUser.getName(), targetUser.getEmail());
+            emailService.sendEmail(targetUser.getEmail(), subject, body);
+        }
     }
 }
