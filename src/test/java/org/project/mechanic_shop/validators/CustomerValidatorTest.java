@@ -1,0 +1,163 @@
+package org.project.mechanic_shop.validators;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.utils.UserHelper;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UserValidatorTest {
+
+    private UserValidator userValidator;
+    @Mock
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void beforeEach() {
+        userValidator = new UserValidator(userRepository);
+    }
+
+    @Nested
+    class Validate {
+        @Test
+        void shouldNotThrowExceptionWhenUserIsSame() {
+            var user = UserHelper.generateUser();
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(user));
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+            assertDoesNotThrow(() -> userValidator.validate(user));
+
+            InOrder inOrder = inOrder(userRepository);
+
+            inOrder.verify(userRepository).findByDocument(user.getDocument());
+            inOrder.verify(userRepository).findByEmail(user.getEmail());
+        }
+
+        @Test
+        void shouldNotThrowExceptionWhenUserDoesNotExists() {
+            var user = UserHelper.generateUser();
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+
+            assertDoesNotThrow(() -> userValidator.validate(user));
+
+            InOrder inOrder = inOrder(userRepository);
+
+            inOrder.verify(userRepository).findByDocument(user.getDocument());
+            inOrder.verify(userRepository).findByEmail(user.getEmail());
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAlreadyExistsUserWithDocument() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
+
+            var alreadyUser = UserHelper.generateUser();
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(alreadyUser));
+
+            assertThatThrownBy(() -> userValidator.validate(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(String.format("A User with this document already exists: %s", user.getDocument()));
+
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository, never()).findByEmail(alreadyUser.getEmail());
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAlreadyUserWithDocumentHaveDifferentId() {
+            var user = UserHelper.generateUser();
+            var alreadyUser = UserHelper.generateUser();
+            alreadyUser.setId(2L);
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.of(alreadyUser));
+
+            assertThatThrownBy(() -> userValidator.validate(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(String.format("A User with this document already exists: %s", user.getDocument()));
+
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository, never()).findByEmail(alreadyUser.getEmail());
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAlreadyExistsUserWithEmail() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
+
+            var alreadyUser = UserHelper.generateUser();
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(alreadyUser));
+
+            assertThatThrownBy(() -> userValidator.validate(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(String.format("A User with this email already exists: %s", user.getEmail()));
+
+            InOrder inOrder = inOrder(userRepository);
+
+            inOrder.verify(userRepository).findByDocument(alreadyUser.getDocument());
+            inOrder.verify(userRepository).findByEmail(alreadyUser.getEmail());
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAlreadyUserWithEmailHaveDifferentId() {
+            var user = UserHelper.generateUser();
+            var alreadyUser = UserHelper.generateUser();
+            alreadyUser.setId(2L);
+
+            when(userRepository.findByDocument(user.getDocument())).thenReturn(Optional.empty());
+            when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(alreadyUser));
+
+            assertThatThrownBy(() -> userValidator.validate(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(String.format("A User with this email already exists: %s", user.getEmail()));
+
+            verify(userRepository).findByDocument(alreadyUser.getDocument());
+            verify(userRepository).findByEmail(alreadyUser.getEmail());
+        }
+    }
+
+    @Nested
+    class ValidateUpdateEligibility {
+        @Test
+        void shouldNotThrowWhenUserAlreadyExitsIdAndIsActive() {
+            var user = UserHelper.generateUser();
+
+            assertDoesNotThrow(() -> userValidator.validateUpdateEligibility(user));
+        }
+
+        @Test
+        void shouldThrowWhenUserDoesNotHaveId() {
+            var user = UserHelper.generateUser();
+            user.setId(null);
+
+            assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("You cannot update an object without an ID");
+        }
+
+        @Test
+        void shouldThrowWhenUserIsNotActive() {
+            var user = UserHelper.generateUser();
+            user.setActive(false);
+
+            assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("You cannot update an inactive object");
+        }
+    }
+}

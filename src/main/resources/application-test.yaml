@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+app:
+  seed:
+    password: 'TESTE123'
+    warehouse:
+      name: 'WAREHOUSE'
+      email: 'warehouse@gmail.com'
+      document: '123456789'
+      role: 'WAREHOUSE'
+    receptionist:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
+    mechanic:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
+    salesperson:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
+    admin:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
