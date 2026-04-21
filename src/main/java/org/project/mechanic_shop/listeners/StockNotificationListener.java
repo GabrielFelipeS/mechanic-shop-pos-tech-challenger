@@ -42,9 +42,10 @@ public class StockNotificationListener {
             return;
         }
 
-        for (User targetUser : notificationTargets) {
-            log.info("Sending stock notification to: {} ({})", targetUser.getName(), targetUser.getEmail());
-            emailService.sendEmail(targetUser.getEmail(), subject, body);
-        }
+
+        String[] recipientEmails = notificationTargets.stream().map(User::getEmail).toArray(String[]::new);
+        log.info("Sending bulk stock notification to {} users", recipientEmails.length);
+        emailService.sendEmail(recipientEmails, subject, body);
+
     }
 }

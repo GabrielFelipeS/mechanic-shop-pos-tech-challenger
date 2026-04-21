@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class MockEmailServiceImpl implements EmailService {
 
     @Override
-    public void sendEmail(String to, String subject, String body) {
+    public void sendEmail(String[] to, String subject, String body) {
         log.info("=================================================");
         log.info("[MOCK EMAIL DISPATCHER]");
         log.info("To: {}", to);

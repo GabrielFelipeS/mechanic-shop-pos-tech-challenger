@@ -17,8 +17,8 @@ public class SmtpEmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
 
     @Override
-    public void sendEmail(String to, String subject, String body) {
-        log.info("Preparing to send real email to: {}", to);
+    public void sendEmail(String[] to, String subject, String body) {
+        log.info("Preparing to send real email to {} users", to.length);
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -29,7 +29,7 @@ public class SmtpEmailServiceImpl implements EmailService {
             message.setText(body);
 
             mailSender.send(message);
-            log.info("Email successfully sent to: {}", to);
+            log.info("Email successfully sent to {} users", to.length);
         } catch (Exception e) {
             log.error("Failed to send email to {}. Error: {}", to, e.getMessage());
 
