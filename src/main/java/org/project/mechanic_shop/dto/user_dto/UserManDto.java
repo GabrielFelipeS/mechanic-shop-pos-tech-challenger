@@ -4,7 +4,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
+import org.project.mechanic_shop.common.validation.CpfOrCnpj;
 import org.project.mechanic_shop.models.enums.UserRoleEnum;
 
 import java.io.Serializable;
@@ -15,7 +17,7 @@ import java.io.Serializable;
 public record UserManDto(
 
         @NotBlank(message = "Document (CPF/CNPJ) is required.")
-        @CPF(message = "Invalid cpf format")
+        @CpfOrCnpj
         @Size(min = 11, max = 14, message = "Document must be between 11 and 14 characters.")
         String document,
 
