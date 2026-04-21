@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-public record ServiceOrderPartManDto(
+public record ServiceOrderStockItemManDto(
         @NotNull UUID partExternalId,
         @NotNull @Min(1) Integer quantity
 ) {}

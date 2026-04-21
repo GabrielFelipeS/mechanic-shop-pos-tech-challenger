@@ -1,0 +1,65 @@
+package org.project.mechanic_shop.listeners;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
+import org.project.mechanic_shop.models.ServiceOrder;
+import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.services.EmailService;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+@Component
+@Slf4j
+@RequiredArgsConstructor
+public class ServiceOrderNotificationListener {
+
+    private final EmailService emailService;
+
+    @Async
+    @EventListener
+    public void handleStatusChangedEvent(ServiceOrderStatusChangedEvent event) {
+        ServiceOrder order = event.serviceOrder();
+        User customer = order.getVehicle().getOwner();
+        User mechanic = order.getResponsibleMechanic();
+
+        String customerEmail = (customer != null) ? customer.getEmail() : null;
+        String mechanicEmail = (mechanic != null) ? mechanic.getEmail() : null;
+
+        switch (event.newStatus()) {
+            case DIAGNOSIS ->
+                    sendEmail(customerEmail, "Service Update: Diagnosis Started",
+                            "Your vehicle is now being evaluated by our mechanics. We will send you the full quote soon.");
+
+            case PENDING_APPROVAL ->
+                    sendEmail(customerEmail, "Action Required: Quote Pending Approval",
+                            "The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs.");
+
+            case APPROVED ->
+                    sendEmail(mechanicEmail, "Task Approved: Start Repairs",
+                            "The customer has approved the quote for OS #" + order.getId() + ". You can now proceed with the service.");
+
+            case REJECTED -> {
+                sendEmail(customerEmail, "Service Cancelled",
+                        "As requested, the service order has been closed. Please arrange to pick up your vehicle at your earliest convenience.");
+                sendEmail(mechanicEmail, "Service Cancelled by Customer",
+                        "The quote for OS #" + order.getId() + " was rejected. The service is finalized and no further action is required.");
+            }
+
+            case COMPLETED ->
+                    sendEmail(customerEmail, "Service Completed! Your car is ready",
+                            "Great news! The maintenance of your vehicle is finished. You can come by to pick it up.");
+
+            case DELIVERED ->
+                    sendEmail(customerEmail, "Thank you for choosing Mechanic Shop!",
+                            "Your vehicle has been successfully delivered. We appreciate your business and hope to see you for your next revision!");
+        }
+    }
+
+    private void sendEmail(String to, String subject, String body) {
+        if (to != null) {
+            emailService.sendEmail(new String[]{to}, subject, body);
+        }
+    }
+}

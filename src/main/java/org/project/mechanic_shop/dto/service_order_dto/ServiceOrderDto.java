@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * DTO for {@link org.project.mechanic_shop.models.ServiceOrder}
+ */
 public record ServiceOrderDto(
         UUID externalId,
         LocalDateTime createdAt,
@@ -24,7 +27,7 @@ public record ServiceOrderDto(
         LocalDateTime approvalDate,
         LocalDateTime completionDate,
         VehicleShortDto vehicle,
-        UserShortDto mechanic,
-        List<ServiceOrderPartDto> parts,
+        UserShortDto responsibleMechanic,
+        List<ServiceOrderStockItemDto> stockItems,
         List<ServiceOrderLaborDto> labors
 ) implements Serializable {}

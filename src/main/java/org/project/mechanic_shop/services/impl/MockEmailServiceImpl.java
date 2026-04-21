@@ -5,6 +5,8 @@ import org.project.mechanic_shop.services.EmailService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "SMTP_ACTIVE", havingValue = "false", matchIfMissing = true)
@@ -14,7 +16,7 @@ public class MockEmailServiceImpl implements EmailService {
     public void sendEmail(String[] to, String subject, String body) {
         log.info("=================================================");
         log.info("[MOCK EMAIL DISPATCHER]");
-        log.info("To: {}", to);
+        log.info("To: {}", Arrays.toString(to));
         log.info("Subject: {}", subject);
         log.info("Body: {}", body);
         log.info("Status: SUCCESS (Console Print Only)");

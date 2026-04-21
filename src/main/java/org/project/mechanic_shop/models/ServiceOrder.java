@@ -52,7 +52,7 @@ public class ServiceOrder extends BaseAuditEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ServiceOrderStatusEnum status = ServiceOrderStatusEnum.DRAFT;
+    private ServiceOrderStatusEnum status = ServiceOrderStatusEnum.RECEIVED;
 
     @Column(name = "approval_date")
     private LocalDateTime approvalDate;
