@@ -18,7 +18,6 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525
