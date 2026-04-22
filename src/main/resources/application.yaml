@@ -9,10 +9,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 
   jpa:
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525

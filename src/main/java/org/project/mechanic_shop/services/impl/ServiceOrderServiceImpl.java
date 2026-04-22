@@ -121,6 +121,11 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
             }
         }
 
+        if(order.getStatus() == ServiceOrderStatusEnum.RECEIVED){
+            order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
+            log.info("Auto-updating status: RECEIVED -> DIAGNOSIS");
+        }
+
         order.setTotalAmount(totalAmount);
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
