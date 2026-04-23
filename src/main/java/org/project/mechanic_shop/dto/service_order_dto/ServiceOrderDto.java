@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.dto.service_order_dto;
 
+import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetDto;
 import org.project.mechanic_shop.dto.user_dto.UserShortDto;
 import org.project.mechanic_shop.dto.vehicle_dto.VehicleShortDto;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
@@ -29,5 +30,6 @@ public record ServiceOrderDto(
         VehicleShortDto vehicle,
         UserShortDto responsibleMechanic,
         List<ServiceOrderStockItemDto> stockItems,
-        List<ServiceOrderLaborDto> labors
+        List<ServiceOrderLaborDto> labors,
+        BudgetDto budget
 ) implements Serializable {}

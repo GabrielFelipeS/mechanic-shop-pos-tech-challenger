@@ -27,7 +27,13 @@ public class ServiceOrderNotificationListener {
         String customerEmail = (customer != null) ? customer.getEmail() : null;
         String mechanicEmail = (mechanic != null) ? mechanic.getEmail() : null;
 
+        log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
+
         switch (event.newStatus()) {
+
+            case RECEIVED ->
+                    log.debug("No email mapped for RECEIVED status. Waiting for diagnosis to start.");
+
             case DIAGNOSIS ->
                     sendEmail(customerEmail, "Service Update: Diagnosis Started",
                             "Your vehicle is now being evaluated by our mechanics. We will send you the full quote soon.");
@@ -36,11 +42,11 @@ public class ServiceOrderNotificationListener {
                     sendEmail(customerEmail, "Action Required: Quote Pending Approval",
                             "The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs.");
 
-            case APPROVED ->
+            case IN_PROGRESS ->
                     sendEmail(mechanicEmail, "Task Approved: Start Repairs",
                             "The customer has approved the quote for OS #" + order.getId() + ". You can now proceed with the service.");
 
-            case REJECTED -> {
+            case CANCELED -> {
                 sendEmail(customerEmail, "Service Cancelled",
                         "As requested, the service order has been closed. Please arrange to pick up your vehicle at your earliest convenience.");
                 sendEmail(mechanicEmail, "Service Cancelled by Customer",

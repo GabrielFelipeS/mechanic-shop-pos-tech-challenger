@@ -10,6 +10,7 @@ import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManD
 import org.project.mechanic_shop.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.models.*;
+import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.repositories.ServiceOrderRepository;
 import org.project.mechanic_shop.services.*;
@@ -40,7 +41,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
     @Override
     @Transactional
     public ServiceOrder createServiceOrder(ServiceOrderCreateDto dto) {
-        log.info("🛠️ Creating new Service Order for vehicle: {}", dto.vehicleExternalId());
+        log.info("Creating new Service Order for vehicle: {}", dto.vehicleExternalId());
 
         ServiceOrder serviceOrder = new ServiceOrder();
         Vehicle vehicle = vehicleService.findByExternalId(dto.vehicleExternalId());
@@ -49,7 +50,10 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         serviceOrder.setCustomerComplaint(dto.customerComplaint());
         serviceOrder.setOdometerReading(dto.odometerReading());
         serviceOrder.setStatus(ServiceOrderStatusEnum.RECEIVED);
-        serviceOrder.setTotalAmount(BigDecimal.ZERO);
+
+
+        Budget initialBudget = new Budget();
+        serviceOrder.setBudget(initialBudget);
 
         if (dto.mechanicExternalId() != null) {
             User mechanic = userService.findByExternalId(dto.mechanicExternalId());
@@ -74,10 +78,15 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
 
-        if (order.getStatus() == ServiceOrderStatusEnum.APPROVED ||
+        if (
+                order.getStatus() == ServiceOrderStatusEnum.PENDING_APPROVAL||
                 order.getStatus() == ServiceOrderStatusEnum.COMPLETED ||
-                order.getStatus() == ServiceOrderStatusEnum.REJECTED) {
-            throw new IllegalStateException("Cannot update items for an Order that is already " + order.getStatus());
+                        order.getBudget().getStatus() == BudgetStatusEnum.REJECTED ||
+                        order.getBudget().getStatus() == BudgetStatusEnum.APPROVED ||
+                        order.getBudget().getStatus() == BudgetStatusEnum.SENT
+
+        ) {
+            throw new IllegalStateException("Cannot update items for an Order that is already " + order.getStatus() + " & " + order.getBudget().getStatus());
         }
 
         order.setMechanicDiagnosis(dto.mechanicDiagnosis());
@@ -121,44 +130,123 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
             }
         }
 
-        if(order.getStatus() == ServiceOrderStatusEnum.RECEIVED){
+        if (order.getStatus() == ServiceOrderStatusEnum.RECEIVED) {
             order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
             log.info("Auto-updating status: RECEIVED -> DIAGNOSIS");
         }
 
-        order.setTotalAmount(totalAmount);
+        order.getBudget().setTotalAmount(totalAmount);
+
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
         log.info("Quote updated successfully. New Total: R$ {}", totalAmount);
         return updatedOrder;
     }
 
-    @Override
     @Transactional
-    public ServiceOrder updateStatus(UUID externalId, ServiceOrderStatusEnum newStatus) {
+    public ServiceOrder requestCustomerApproval(UUID externalId) {
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
 
+        if (order.getStatus() != ServiceOrderStatusEnum.DIAGNOSIS) {
+            throw new IllegalStateException("Only orders IN DIAGNOSIS can be sent for approval.");
+        }
+
+        ServiceOrderStatusEnum oldStatus = order.getStatus();
+        order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+
+        order.getBudget().setStatus(BudgetStatusEnum.SENT);
+
+        ServiceOrder updatedOrder = serviceOrderRepository.save(order);
+
+        log.info("Diagnosis finished. Status auto-updated: DIAGNOSIS -> PENDING_APPROVAL");
+
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.PENDING_APPROVAL));
+
+        return updatedOrder;
+    }
+
+    @Override
+    @Transactional
+    public ServiceOrder processBudgetResponse(UUID externalId, boolean isApproved) {
+        log.info("Processing budget response for OS: {}. Approved: {}", externalId, isApproved);
+
+        ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+
+        if (order.getStatus() != ServiceOrderStatusEnum.PENDING_APPROVAL) {
+            throw new IllegalStateException("Cannot process budget response. Order is currently: " + order.getStatus());
+        }
+
         ServiceOrderStatusEnum oldStatus = order.getStatus();
 
-        log.info("Updating Service Order {} status: {} -> {}", externalId, oldStatus, newStatus);
+        if (isApproved) {
+            order.getBudget().setStatus(BudgetStatusEnum.APPROVED);
 
-        if (newStatus == ServiceOrderStatusEnum.APPROVED && oldStatus != ServiceOrderStatusEnum.APPROVED) {
-            log.info("OS Approved! Triggering stock withdrawal for {} items", order.getStockItems().size());
+            log.info("Budget Approved! Triggering stock withdrawal for {} items", order.getStockItems().size());
             for (ServiceOrderStockItem item : order.getStockItems()) {
                 stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
             }
+
             order.setApprovalDate(LocalDateTime.now());
+            order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+
+        } else {
+            order.getBudget().setStatus(BudgetStatusEnum.REJECTED);
+            order.setStatus(ServiceOrderStatusEnum.CANCELED);
+            log.info("Budget Rejected. Service Order Canceled.");
         }
 
-        if (newStatus == ServiceOrderStatusEnum.COMPLETED) {
-            order.setCompletionDate(LocalDateTime.now());
+        ServiceOrder updatedOrder = serviceOrderRepository.save(order);
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, order.getStatus()));
+
+        return updatedOrder;
+    }
+
+    @Transactional
+    @Override
+    public ServiceOrder finishService(UUID externalId) {
+        log.info("Action triggered: Finishing service for OS {}", externalId);
+
+        ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+
+        if (order.getStatus() != ServiceOrderStatusEnum.IN_PROGRESS) {
+            throw new IllegalStateException("Only orders IN PROGRESS can be finished.");
         }
 
-        order.setStatus(newStatus);
+        ServiceOrderStatusEnum oldStatus = order.getStatus();
+
+        order.setStatus(ServiceOrderStatusEnum.COMPLETED);
+        order.setCompletionDate(LocalDateTime.now());
+
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
-        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, newStatus));
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.COMPLETED));
+
+        return updatedOrder;
+    }
+
+
+    @Transactional
+    @Override
+    public ServiceOrder deliverVehicle(UUID externalId) {
+        log.info("Action triggered: Delivering vehicle for OS {}", externalId);
+
+        ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+
+        if (order.getStatus() != ServiceOrderStatusEnum.COMPLETED) {
+            throw new IllegalStateException("Only COMPLETED orders can be delivered to the customer.");
+        }
+
+        ServiceOrderStatusEnum oldStatus = order.getStatus();
+
+        order.setStatus(ServiceOrderStatusEnum.DELIVERED);
+
+        ServiceOrder updatedOrder = serviceOrderRepository.save(order);
+
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.DELIVERED));
 
         return updatedOrder;
     }
@@ -174,11 +262,13 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ServiceOrder> search(String licensePlate, ServiceOrderStatusEnum status, Pageable pageable) {
+    public Page<ServiceOrder> search(String licensePlate, ServiceOrderStatusEnum status, Pageable pageable, User mechanic) {
         log.info("Searching service orders with filters - licensePlate: {}, status: {}", licensePlate, status);
+
 
         ServiceOrder probe = new ServiceOrder();
         probe.setStatus(status);
+        probe.setResponsibleMechanic(mechanic);
 
         if (licensePlate != null && !licensePlate.isBlank()) {
             Vehicle vehicleProbe = new Vehicle();
@@ -194,4 +284,6 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
         return serviceOrderRepository.findAll(Example.of(probe, matcher), pageable);
     }
+
+
 }

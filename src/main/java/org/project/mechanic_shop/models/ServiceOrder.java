@@ -47,12 +47,13 @@ public class ServiceOrder extends BaseAuditEntity {
     @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceOrderLabor> labors = new ArrayList<>();
 
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ServiceOrderStatusEnum status = ServiceOrderStatusEnum.RECEIVED;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "budget_id", referencedColumnName = "id")
+    private Budget budget;
 
     @Column(name = "approval_date")
     private LocalDateTime approvalDate;

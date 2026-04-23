@@ -6,10 +6,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.common.responses.ApiResponse;
 import org.project.mechanic_shop.dto.service_order_dto.*;
+import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetResponseDto;
 import org.project.mechanic_shop.mappers.ServiceOrderMapper;
 import org.project.mechanic_shop.models.ServiceOrder;
+import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.services.ServiceOrderService;
+import org.project.mechanic_shop.services.UserService;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +36,7 @@ public class ServiceOrderController {
     private final ServiceOrderMapper mapper; // Lembre-se de criar este Mapper (MapStruct ou manual)
 
     private static final String SUCCESS_MESSAGE = "success";
+    private final UserService userService;
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON')")
@@ -81,29 +85,81 @@ public class ServiceOrderController {
         ));
     }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
-    public ResponseEntity<ApiResponse> updateStatus(
-            @PathVariable UUID id,
-            @RequestBody @Valid ServiceOrderStatusUpdateDto dto) {
 
-        log.info("Try update status of service order {} to {}", id, dto.status());
+    @PostMapping("/{id}/request-approval")
+    @PreAuthorize("hasAnyRole('MECHANIC', 'ADMIN')")
+    public ResponseEntity<ApiResponse> requestApproval(@PathVariable UUID id) {
+        log.info("Action triggered: Requesting customer approval for OS {}", id);
 
-        var updatedServiceOrder = service.updateStatus(id, dto.status());
-        var shortDto = mapper.toShortDto(updatedServiceOrder);
+        var order = service.requestCustomerApproval(id);
+        var dto = mapper.toDto(order);
 
         return ResponseEntity.ok().body(new ApiResponse(
                 HttpStatus.OK.value(),
-                SUCCESS_MESSAGE,
-                shortDto
+                "Approval requested successfully. Status updated to PENDING_APPROVAL.",
+                dto
         ));
     }
+
+    @PostMapping("/{id}/budget-response")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<ApiResponse> processBudgetResponse(
+            @PathVariable UUID id,
+            @Valid @RequestBody BudgetResponseDto responseDto) {
+
+        log.info("Action triggered: Processing budget response for OS {}. Approved: {}", id, responseDto.approved());
+
+        ServiceOrder order = service.processBudgetResponse(id, responseDto.approved());
+        ServiceOrderDto dto = mapper.toDto(order);
+
+        String message = responseDto.approved() ?
+                "Budget approved successfully! Stock withdrawn and OS moved to IN_PROGRESS." :
+                "Budget rejected. OS has been CANCELED.";
+
+        return ResponseEntity.ok().body(new ApiResponse(
+                HttpStatus.OK.value(),
+                message,
+                dto
+        ));
+    }
+
+    @PostMapping("/{id}/finish")
+    @PreAuthorize("hasAnyRole('MECHANIC', 'ADMIN')")
+    public ResponseEntity<ApiResponse> finishService(@PathVariable UUID id) {
+        log.info("Action triggered: Mechanic finishing service for OS {}", id);
+
+        ServiceOrder order = service.finishService(id);
+        ServiceOrderDto dto = mapper.toDto(order);
+
+        return ResponseEntity.ok().body(new ApiResponse(
+                HttpStatus.OK.value(),
+                "Service finished successfully! OS moved to COMPLETED and customer notified.",
+                dto
+        ));
+    }
+
+    @PostMapping("/{id}/deliver")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse> deliverVehicle(@PathVariable UUID id) {
+        log.info("Action triggered: Receptionist delivering vehicle for OS {}", id);
+
+        ServiceOrder order = service.deliverVehicle(id);
+        ServiceOrderDto dto = mapper.toDto(order);
+
+        return ResponseEntity.ok().body(new ApiResponse(
+                HttpStatus.OK.value(),
+                "Vehicle delivered successfully! OS lifecycle is now closed (DELIVERED).",
+                dto
+        ));
+    }
+
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON')")
     public ResponseEntity<ApiResponse> search(
             @RequestParam(name = "licensePlate", required = false) String licensePlate,
             @RequestParam(name = "status", required = false) ServiceOrderStatusEnum status,
+            @RequestParam(name = "mechanicId", required = false) UUID mechanicId,
             @ParameterObject @PageableDefault(
                     size = 10,
                     sort = "createdAt",
@@ -111,8 +167,11 @@ public class ServiceOrderController {
 
         log.info("Search service orders with filters");
 
-        Page<ServiceOrder> serviceOrders = service.search(licensePlate, status, pageable);
-        var listDto = serviceOrders.map(mapper::toShortDto); // Retorna a lista resumida na paginação
+        User mechanic =  null;
+        if (mechanicId != null ) mechanic = userService.findByExternalId(mechanicId);
+
+        Page<ServiceOrder> serviceOrders = service.search(licensePlate, status, pageable, mechanic);
+        var listDto = serviceOrders.map(mapper::toShortDto);
 
         return ResponseEntity.ok().body(new ApiResponse(
                 HttpStatus.OK.value(),
