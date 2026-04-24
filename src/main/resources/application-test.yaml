@@ -10,7 +10,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
-
+    hibernate:
+      ddl-auto: create-only
 app:
   seed:
     password: 'TESTE123'
