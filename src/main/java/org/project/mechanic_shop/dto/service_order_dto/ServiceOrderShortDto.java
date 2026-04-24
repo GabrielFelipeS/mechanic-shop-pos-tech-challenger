@@ -12,6 +12,5 @@ public record ServiceOrderShortDto(
         LocalDateTime createdAt,
         ServiceOrderStatusEnum status,
         String licensePlate,
-        String customerName,
-        BigDecimal totalAmount
+        String customerName
 ) implements Serializable {}

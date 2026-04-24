@@ -3,8 +3,10 @@ package org.project.mechanic_shop.events;
 import org.project.mechanic_shop.models.ServiceOrder;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 
+import java.util.UUID;
+
 public record ServiceOrderStatusChangedEvent(
-        ServiceOrder serviceOrder,
+        UUID serviceOrderExternalId,
         ServiceOrderStatusEnum oldStatus,
         ServiceOrderStatusEnum newStatus
 ) {}

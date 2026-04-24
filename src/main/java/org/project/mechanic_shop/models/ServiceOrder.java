@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 
 import java.math.BigDecimal;
@@ -42,16 +44,19 @@ public class ServiceOrder extends BaseAuditEntity {
     private String mechanicDiagnosis;
 
     @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<ServiceOrderStockItem> stockItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<ServiceOrderLabor> labors = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ServiceOrderStatusEnum status = ServiceOrderStatusEnum.RECEIVED;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "budget_id", referencedColumnName = "id")
     private Budget budget;
 

@@ -76,12 +76,12 @@ public class ServiceOrderController {
         log.info("Try update quote for service order {} with parameters: {}", id, dto);
 
         var updatedServiceOrder = service.updateQuote(id, dto);
-        var shortDto = mapper.toShortDto(updatedServiceOrder);
+        var soDto = mapper.toDto(updatedServiceOrder);
 
         return ResponseEntity.ok().body(new ApiResponse(
                 HttpStatus.OK.value(),
                 SUCCESS_MESSAGE,
-                shortDto
+                soDto
         ));
     }
 

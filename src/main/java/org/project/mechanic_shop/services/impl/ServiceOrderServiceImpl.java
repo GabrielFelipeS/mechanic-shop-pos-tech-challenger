@@ -3,6 +3,7 @@ package org.project.mechanic_shop.services.impl;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.sql.ast.SqlTreeCreationException;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
@@ -37,6 +38,8 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
     private final UserService userService;
     private final StockItemService stockItemService;
     private final MechanicServiceService mechanicServiceCatalog;
+
+    private static final String SERVICE_ORDER_NOT_FOUND_MSG = "Service Order not found";
 
     @Override
     @Transactional
@@ -76,7 +79,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         log.info("Updating quote for Service Order: {}", externalId);
 
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+                .orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
         if (
                 order.getStatus() == ServiceOrderStatusEnum.PENDING_APPROVAL||
@@ -146,7 +149,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
     @Transactional
     public ServiceOrder requestCustomerApproval(UUID externalId) {
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+                .orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
         if (order.getStatus() != ServiceOrderStatusEnum.DIAGNOSIS) {
             throw new IllegalStateException("Only orders IN DIAGNOSIS can be sent for approval.");
@@ -161,7 +164,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
         log.info("Diagnosis finished. Status auto-updated: DIAGNOSIS -> PENDING_APPROVAL");
 
-        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.PENDING_APPROVAL));
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, ServiceOrderStatusEnum.PENDING_APPROVAL));
 
         return updatedOrder;
     }
@@ -172,7 +175,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         log.info("Processing budget response for OS: {}. Approved: {}", externalId, isApproved);
 
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+                .orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
         if (order.getStatus() != ServiceOrderStatusEnum.PENDING_APPROVAL) {
             throw new IllegalStateException("Cannot process budget response. Order is currently: " + order.getStatus());
@@ -198,7 +201,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         }
 
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
-        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, order.getStatus()));
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, order.getStatus()));
 
         return updatedOrder;
     }
@@ -209,7 +212,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         log.info("Action triggered: Finishing service for OS {}", externalId);
 
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+                .orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
         if (order.getStatus() != ServiceOrderStatusEnum.IN_PROGRESS) {
             throw new IllegalStateException("Only orders IN PROGRESS can be finished.");
@@ -222,7 +225,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
-        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.COMPLETED));
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, ServiceOrderStatusEnum.COMPLETED));
 
         return updatedOrder;
     }
@@ -234,7 +237,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         log.info("Action triggered: Delivering vehicle for OS {}", externalId);
 
         ServiceOrder order = serviceOrderRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("Service Order not found"));
+                .orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
         if (order.getStatus() != ServiceOrderStatusEnum.COMPLETED) {
             throw new IllegalStateException("Only COMPLETED orders can be delivered to the customer.");
@@ -246,7 +249,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
-        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder, oldStatus, ServiceOrderStatusEnum.DELIVERED));
+        eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, ServiceOrderStatusEnum.DELIVERED));
 
         return updatedOrder;
     }
