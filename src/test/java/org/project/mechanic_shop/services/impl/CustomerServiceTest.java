@@ -211,6 +211,7 @@ class UserServiceTest {
                     user.getDocument(),
                     user.getName(),
                     user.getEmail(),
+                    user.getRole(),
                     pageable
             );
 

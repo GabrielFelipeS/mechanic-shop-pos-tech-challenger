@@ -16,6 +16,7 @@ public interface UserService {
     Page<User> search(String document,
                           String name,
                           String email,
+                          String role,
                           Pageable pageable);
 
     User update(UUID id, User update);

@@ -24,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -160,6 +162,8 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
         order.getBudget().setStatus(BudgetStatusEnum.SENT);
 
+        setEstimatedDeadline(order);
+
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
         log.info("Diagnosis finished. Status auto-updated: DIAGNOSIS -> PENDING_APPROVAL");
@@ -221,7 +225,8 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
         ServiceOrderStatusEnum oldStatus = order.getStatus();
 
         order.setStatus(ServiceOrderStatusEnum.COMPLETED);
-        order.setCompletionDate(LocalDateTime.now());
+
+        recordActualFinish(order);
 
         ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 
@@ -286,6 +291,33 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
                 .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
 
         return serviceOrderRepository.findAll(Example.of(probe, matcher), pageable);
+    }
+
+
+    public void setEstimatedDeadline(ServiceOrder order) {
+
+        long totalServiceMinutes = order.getLabors().stream()
+                .mapToLong(l -> (long) l.getMechanicService().getEstimatedTimeMinutes() * l.getQuantity())
+                .sum();
+
+        boolean isPartMissing = order.getStockItems().stream()
+                .anyMatch(item -> item.getStockItem().getQuantity() < 0);
+
+        int baseDays = (int) Math.ceil(totalServiceMinutes / 1440.0);
+        int totalEstimatedDays = baseDays + (isPartMissing ? 3 : 0);
+
+        order.setEstimatedCompletionDays(totalEstimatedDays);
+        order.setEstimatedCompletionDate(LocalDateTime.now().plusDays(totalEstimatedDays));
+        order.setApprovalDate(LocalDateTime.now());
+    }
+
+    public void recordActualFinish(ServiceOrder order) {
+        LocalDateTime now = LocalDateTime.now();
+        order.setActualCompletionDate(now);
+
+        long daysTaken = ChronoUnit.DAYS.between(order.getApprovalDate(), now);
+
+        order.setActualCompletionDays((int) daysTaken);
     }
 
 

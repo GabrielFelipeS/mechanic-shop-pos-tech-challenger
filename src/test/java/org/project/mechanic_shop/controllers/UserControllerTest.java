@@ -39,7 +39,7 @@ import java.util.UUID;
 // TODO FAZER TESTES PARA VALIDAR O @VALID
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({SecurityConfig.class, UserMapperImpl.class,  ObjectMapperConfig.class})
+@Import({SecurityConfig.class, UserMapperImpl.class, ObjectMapperConfig.class})
 class UserControllerTest {
 
     @Autowired
@@ -89,12 +89,12 @@ class UserControllerTest {
             when(service.create(any(User.class))).thenReturn(user);
 
             mockMvc.perform(
-                    post("/api/users/create")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(userDto))
+                            post("/api/users/create")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(userDto))
                     )
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.CREATED.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.CREATED.value()))
                     .andExpect(jsonPath("$.message").value("success"))
                     .andExpect(jsonPath("$.data").value(user.getExternalId()));
         }
@@ -111,7 +111,7 @@ class UserControllerTest {
                                     .content(objectMapper.writeValueAsString(userDto))
                     )
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.CONFLICT.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.CONFLICT.value()))
             ;
         }
     }
@@ -133,7 +133,7 @@ class UserControllerTest {
                                     .content(objectMapper.writeValueAsString(userDto))
                     )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.OK.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                     .andExpect(jsonPath("$.message").value("success"));
 
             verify(service).update(eq(externalId), any(User.class));
@@ -153,7 +153,7 @@ class UserControllerTest {
                                     .content(objectMapper.writeValueAsString(userDto))
                     )
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.CONFLICT.value()));
+                    .andExpect(jsonPath("$.status").value(HttpStatus.CONFLICT.value()));
 
         }
     }
@@ -176,6 +176,7 @@ class UserControllerTest {
                     eq(user.getDocument()),
                     eq(user.getName()),
                     eq(user.getEmail()),
+                    eq(user.getRole()),
                     any(Pageable.class)
             )).thenReturn(page);
 
@@ -189,7 +190,7 @@ class UserControllerTest {
                                     .param("sort", "name,asc")
                     )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.OK.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                     .andExpect(jsonPath("$.message").value("success"))
                     .andExpect(jsonPath("$.data.content").isArray())
                     .andExpect(jsonPath("$.data.content[0].name").value(user.getName()))
@@ -199,6 +200,7 @@ class UserControllerTest {
                     eq(user.getDocument()),
                     eq(user.getName()),
                     eq(user.getEmail()),
+                    eq(user.getRole()),
                     captor.capture()
             );
 
@@ -225,6 +227,7 @@ class UserControllerTest {
                     eq(user.getDocument()),
                     any(),
                     any(),
+                    any(),
                     any(Pageable.class)
             )).thenReturn(page);
 
@@ -233,7 +236,7 @@ class UserControllerTest {
                                     .param("document", user.getDocument())
                     )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.OK.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                     .andExpect(jsonPath("$.message").value("success"))
                     .andExpect(jsonPath("$.data.content").isArray())
                     .andExpect(jsonPath("$.data.content[0].name").value(user.getName()))
@@ -241,6 +244,7 @@ class UserControllerTest {
 
             verify(service).search(
                     eq(user.getDocument()),
+                    eq(null),
                     eq(null),
                     eq(null),
                     captor.capture()
@@ -255,14 +259,14 @@ class UserControllerTest {
     }
 
     @Nested
-    class GetAvailableRoles{
+    class GetAvailableRoles {
         @Test
         void shouldBeAbleUpdateUser() throws Exception {
             mockMvc.perform(
                             get("/api/users/available-roles")
                     )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value( HttpStatus.OK.value()))
+                    .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                     .andExpect(jsonPath("$.message").value("success"));
 
         }

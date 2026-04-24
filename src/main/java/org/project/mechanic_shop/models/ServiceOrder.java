@@ -63,8 +63,17 @@ public class ServiceOrder extends BaseAuditEntity {
     @Column(name = "approval_date")
     private LocalDateTime approvalDate;
 
-    @Column(name = "completion_date")
-    private LocalDateTime completionDate;
+    @Column(name = "estimated_completion_date")
+    private LocalDateTime estimatedCompletionDate;
+
+    @Column(name = "estimated_completion_days")
+    private Integer estimatedCompletionDays;
+
+    @Column(name = "actual_completion_date")
+    private LocalDateTime actualCompletionDate;
+
+    @Column(name = "actual_completion_days")
+    private Integer actualCompletionDays;
 
     public void addStockItem(ServiceOrderStockItem stockItem) {
         stockItems.add(stockItem);

@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.models.User;
+import org.project.mechanic_shop.models.enums.UserRoleEnum;
 import org.project.mechanic_shop.repositories.UserRepository;
 import org.project.mechanic_shop.services.UserService;
 import org.project.mechanic_shop.validators.UserValidator;
@@ -45,13 +46,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<User> search(String document, String name, String email, Pageable pageable) {
+    public Page<User> search(String document, String name, String email, String role, Pageable pageable) {
         log.info("Searching Users with filters - document: {}, name: {}, email: {}", document, name, email);
 
         var user = new User();
         user.setDocument(document);
         user.setName(name);
         user.setEmail(email);
+        user.setRole(role);
 
         ExampleMatcher matcher = ExampleMatcher.matching()
                 .withIgnorePaths(

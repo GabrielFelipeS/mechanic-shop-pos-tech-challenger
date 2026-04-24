@@ -94,6 +94,7 @@ public class UserController {
             @RequestParam(name = "document", required = false) String document,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "role", required = false) String role,
             @ParameterObject @PageableDefault(
                     size = 10,
                     sort = "createdAt",
@@ -101,7 +102,7 @@ public class UserController {
 
         log.info("Search users with filters");
 
-        Page<User> users = service.search(document, name, email, pageable);
+        Page<User> users = service.search(document, name, email, role, pageable);
 
         var listDto = users.map(mapper::toShortDto);
 
