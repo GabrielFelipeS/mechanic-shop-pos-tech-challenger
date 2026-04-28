@@ -149,7 +149,7 @@ class MechanicServiceServiceTest {
         void shouldThrowExceptionWhenServiceToUpdateNotFound() {
             UUID externalId = UUID.randomUUID();
             var mechanicService = new MechanicService();
-            
+
             when(repository.findByExternalId(externalId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.update(externalId, mechanicService))
