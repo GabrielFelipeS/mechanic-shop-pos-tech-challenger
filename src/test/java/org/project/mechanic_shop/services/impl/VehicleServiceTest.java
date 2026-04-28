@@ -80,7 +80,7 @@ class VehicleServiceTest {
         void shouldThrowExceptionWhenOwnerNotFoundOnCreate() {
             UUID ownerId = UUID.randomUUID();
             var vehicle = vehicle();
-            
+
             when(userRepository.findByExternalId(ownerId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.create(vehicle, ownerId))
