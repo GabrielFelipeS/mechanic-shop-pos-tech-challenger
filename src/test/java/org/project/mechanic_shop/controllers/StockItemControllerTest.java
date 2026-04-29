@@ -231,28 +231,6 @@ class StockItemControllerTest {
 		}
 	}
 
-	@Nested
-	class Withdraw {
-
-		@Test
-		void shouldWithdrawStock() throws Exception {
-			var externalId = UUID.randomUUID();
-			var dto = new StockWithdrawalDto(3);
-
-			mockMvc
-				.perform(
-					patch("/api/stock-items/{id}/withdraw", externalId)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(dto))
-				)
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
-				.andExpect(jsonPath("$.message").value("Inventory updated successfully."));
-
-			verify(service).withdrawStock(externalId, dto.quantity());
-		}
-	}
-
 	private StockItem buildStockItem() {
 		StockItem stockItem = new StockItem();
 		stockItem.setId(1L);

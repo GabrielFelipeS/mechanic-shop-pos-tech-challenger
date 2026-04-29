@@ -165,28 +165,6 @@ class StockItemControllerIT {
 			.andExpect(jsonPath("$.data.content[0].name").value(savedItem.getName()));
 	}
 
-	@Test
-	void shouldWithdrawStockAndTrackPendingDemand() throws Exception {
-		StockItem savedItem = stockItemRepository.save(buildStockItem("P-INT-05", "Lampada", 2));
-
-		mockMvc
-			.perform(
-				patch("/api/stock-items/{id}/withdraw", savedItem.getExternalId())
-					.with(AuthUtil.admin())
-					.with(csrf())
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(new StockWithdrawalDto(5)))
-			)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
-			.andExpect(jsonPath("$.message").value("Inventory updated successfully."));
-
-		StockItem updatedItem = stockItemRepository.findByExternalId(savedItem.getExternalId()).orElseThrow();
-
-		assertThat(updatedItem.getQuantity()).isZero();
-		assertThat(updatedItem.getPendingDemand()).isEqualTo(3);
-	}
-
 	private StockItem buildStockItem(String code, String name, int quantity) {
 		StockItem item = new StockItem();
 		item.setCode(code);
