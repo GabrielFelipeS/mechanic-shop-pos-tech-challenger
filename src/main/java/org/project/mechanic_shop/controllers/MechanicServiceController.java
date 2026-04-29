@@ -2,6 +2,7 @@ package org.project.mechanic_shop.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.common.responses.ApiResponse;
@@ -20,8 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/mechanic-services")
 @RequiredArgsConstructor
@@ -29,80 +28,66 @@ import java.util.UUID;
 @Slf4j
 public class MechanicServiceController {
 
-    private final MechanicServiceService service;
-    private final MechanicServiceMapper mapper;
+	private final MechanicServiceService service;
+	private final MechanicServiceMapper mapper;
 
-    private static final String SUCCESS_MESSAGE = "success";
+	private static final String SUCCESS_MESSAGE = "success";
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
-    public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
-        log.info("Find mechanic service by External ID: {}", id);
+	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
+	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
+		log.info("Find mechanic service by External ID: {}", id);
 
-        var mechanicService = service.findByExternalId(id);
-        var dto = mapper.toDto(mechanicService);
+		var mechanicService = service.findByExternalId(id);
+		var dto = mapper.toDto(mechanicService);
 
-        return ResponseEntity.ok().body(new ApiResponse(
-                HttpStatus.OK.value(),
-                SUCCESS_MESSAGE,
-                dto
-        ));
-    }
+		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
+	}
 
-    @PostMapping("/create")
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse> create(@RequestBody @Valid MechanicServiceManDto dto) {
-        log.info("Try create mechanic service with parameters: {}", dto);
+	@PostMapping("/create")
+	@PreAuthorize("hasAnyRole('ADMIN')")
+	public ResponseEntity<ApiResponse> create(@RequestBody @Valid MechanicServiceManDto dto) {
+		log.info("Try create mechanic service with parameters: {}", dto);
 
-        MechanicService mechanicService = mapper.toEntity(dto);
+		MechanicService mechanicService = mapper.toEntity(dto);
 
-        var mechanicServiceCreated = service.create(mechanicService);
+		var mechanicServiceCreated = service.create(mechanicService);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(
-                HttpStatus.CREATED.value(),
-                SUCCESS_MESSAGE,
-                mechanicServiceCreated.getExternalId()
-        ));
-    }
+		return ResponseEntity.status(HttpStatus.CREATED).body(
+			new ApiResponse(HttpStatus.CREATED.value(), SUCCESS_MESSAGE, mechanicServiceCreated.getExternalId())
+		);
+	}
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse> update(@PathVariable UUID id,
-                                              @RequestBody @Valid MechanicServiceManDto dto) {
-        log.info("Try update mechanic service {} with parameters: {}", id, dto);
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN')")
+	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid MechanicServiceManDto dto) {
+		log.info("Try update mechanic service {} with parameters: {}", id, dto);
 
-        var mechanicServiceToUpdate = mapper.toEntity(dto);
+		var mechanicServiceToUpdate = mapper.toEntity(dto);
 
-        var updatedMechanicService = service.update(id, mechanicServiceToUpdate);
+		var updatedMechanicService = service.update(id, mechanicServiceToUpdate);
 
-        MechanicServiceDto mechanicServiceDto = mapper.toDto(updatedMechanicService);
+		MechanicServiceDto mechanicServiceDto = mapper.toDto(updatedMechanicService);
 
-        return ResponseEntity.ok().body(new ApiResponse(
-                HttpStatus.OK.value(),
-                SUCCESS_MESSAGE,
-                mechanicServiceDto
-        ));
-    }
+		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, mechanicServiceDto));
+	}
 
-    @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
-    public ResponseEntity<ApiResponse> search(
-            @RequestParam(name = "name", required = false) String name,
-            @ParameterObject @PageableDefault(
-                    size = 10,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC) Pageable pageable) {
+	@GetMapping("/search")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
+	public ResponseEntity<ApiResponse> search(
+		@RequestParam(name = "name", required = false) String name,
+		@ParameterObject @PageableDefault(
+			size = 10,
+			sort = "createdAt",
+			direction = Sort.Direction.DESC
+		) Pageable pageable
+	) {
+		log.info("Search mechanic services with filters");
 
-        log.info("Search mechanic services with filters");
+		Page<MechanicService> mechanicServices = service.search(name, pageable);
 
-        Page<MechanicService> mechanicServices = service.search(name, pageable);
+		var listDto = mechanicServices.map(mapper::toShortDto);
 
-        var listDto = mechanicServices.map(mapper::toShortDto);
-
-        return ResponseEntity.ok().body(new ApiResponse(
-                HttpStatus.OK.value(),
-                SUCCESS_MESSAGE,
-                listDto
-        ));
-    }
+		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, listDto));
+	}
 }

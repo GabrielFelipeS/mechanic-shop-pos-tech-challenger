@@ -1,38 +1,38 @@
 package org.project.mechanic_shop.validators;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.project.mechanic_shop.models.Vehicle;
 import org.project.mechanic_shop.repositories.VehicleRepository;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 @RequiredArgsConstructor
 public class VehicleValidator {
 
-    private final VehicleRepository repository;
+	private final VehicleRepository repository;
 
-    public void validate(Vehicle vehicle) {
-        if (existsVehicleByLicensePlate(vehicle)) {
-            throw new IllegalArgumentException("A Vehicle with this license plate already exists: " + vehicle.getLicensePlate());
-        }
-    }
+	public void validate(Vehicle vehicle) {
+		if (existsVehicleByLicensePlate(vehicle)) {
+			throw new IllegalArgumentException(
+				"A Vehicle with this license plate already exists: " + vehicle.getLicensePlate()
+			);
+		}
+	}
 
-    public void validateUpdateEligibility(Vehicle obj) {
-        if (obj.getId() == null) {
-            throw new IllegalArgumentException("You cannot update an object without an ID");
-        }
+	public void validateUpdateEligibility(Vehicle obj) {
+		if (obj.getId() == null) {
+			throw new IllegalArgumentException("You cannot update an object without an ID");
+		}
+	}
 
-    }
+	private boolean existsVehicleByLicensePlate(Vehicle vehicle) {
+		Optional<Vehicle> result = repository.findByLicensePlate(vehicle.getLicensePlate());
 
-    private boolean existsVehicleByLicensePlate(Vehicle vehicle) {
-        Optional<Vehicle> result = repository.findByLicensePlate(vehicle.getLicensePlate());
+		if (vehicle.getId() == null) {
+			return result.isPresent();
+		}
 
-        if (vehicle.getId() == null) {
-            return result.isPresent();
-        }
-
-        return result.isPresent() && !vehicle.getId().equals(result.get().getId());
-    }
+		return result.isPresent() && !vehicle.getId().equals(result.get().getId());
+	}
 }

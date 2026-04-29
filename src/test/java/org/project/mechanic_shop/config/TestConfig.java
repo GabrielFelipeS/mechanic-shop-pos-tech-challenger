@@ -9,19 +9,19 @@ import org.springframework.context.annotation.Bean;
 
 @TestConfiguration
 public class TestConfig {
-    @Bean
-    UserService userService() {
-        return Mockito.mock(UserService.class);
-    }
 
-    @Bean
-    UserMapper userMapper() {
-        return Mockito.mock(UserMapper.class);
-    }
+	@Bean
+	UserService userService() {
+		return Mockito.mock(UserService.class);
+	}
 
-    @Bean
-    UserRepository userRepository() {
-        return Mockito.mock(UserRepository.class);
-    }
+	@Bean
+	UserMapper userMapper() {
+		return Mockito.mock(UserMapper.class);
+	}
 
+	@Bean
+	UserRepository userRepository() {
+		return Mockito.mock(UserRepository.class);
+	}
 }

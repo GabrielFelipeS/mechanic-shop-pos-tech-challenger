@@ -1,13 +1,11 @@
 package org.project.mechanic_shop.common.errors;
 
-public record ErrorField( String field, String message) {
+public record ErrorField(String field, String message) {
+	public String getField() {
+		return field;
+	}
 
-    public String getField(){
-        return field;
-    }
-
-    public String getMessage(){
-        return message;
-    }
-
+	public String getMessage() {
+		return message;
+	}
 }

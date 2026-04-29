@@ -1,6 +1,20 @@
 package org.project.mechanic_shop.services.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import jakarta.persistence.EntityNotFoundException;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,186 +34,170 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class MechanicServiceServiceTest {
 
-    private MechanicServiceService service;
+	private MechanicServiceService service;
 
-    @Mock
-    private MechanicServiceRepository repository;
+	@Mock
+	private MechanicServiceRepository repository;
 
-    @Mock
-    private MechanicServiceValidator validator;
+	@Mock
+	private MechanicServiceValidator validator;
 
-    @BeforeEach
-    void setup() {
-        service = new MechanicServiceServiceImpl(repository, validator);
-    }
+	@BeforeEach
+	void setup() {
+		service = new MechanicServiceServiceImpl(repository, validator);
+	}
 
-    @Nested
-    class Create {
-        @Test
-        void shouldCreateMechanicService() {
-            var mechanicService = MechanicServiceHelper.generateMechanicServiceWithoutId();
+	@Nested
+	class Create {
 
-            when(repository.save(mechanicService)).thenReturn(mechanicService);
+		@Test
+		void shouldCreateMechanicService() {
+			var mechanicService = MechanicServiceHelper.generateMechanicServiceWithoutId();
 
-            var saved = service.create(mechanicService);
+			when(repository.save(mechanicService)).thenReturn(mechanicService);
 
-            InOrder inOrder = inOrder(validator, repository);
-            inOrder.verify(validator).validate(mechanicService);
-            inOrder.verify(repository).save(mechanicService);
+			var saved = service.create(mechanicService);
 
-            assertThat(saved)
-                    .usingRecursiveAssertion()
-                    .ignoringAllNullFields()
-                    .isEqualTo(mechanicService);
-        }
+			InOrder inOrder = inOrder(validator, repository);
+			inOrder.verify(validator).validate(mechanicService);
+			inOrder.verify(repository).save(mechanicService);
 
-        @Test
-        void shouldNotSaveWhenValidationFails() {
-            var mechanicService = MechanicServiceHelper.generateMechanicServiceWithoutId();
+			assertThat(saved).usingRecursiveAssertion().ignoringAllNullFields().isEqualTo(mechanicService);
+		}
 
-            doThrow(new IllegalArgumentException()).when(validator).validate(mechanicService);
+		@Test
+		void shouldNotSaveWhenValidationFails() {
+			var mechanicService = MechanicServiceHelper.generateMechanicServiceWithoutId();
 
-            assertThatThrownBy(() -> service.create(mechanicService))
-                    .isInstanceOf(IllegalArgumentException.class);
+			doThrow(new IllegalArgumentException()).when(validator).validate(mechanicService);
 
-            verify(repository, never()).save(any());
-        }
-    }
+			assertThatThrownBy(() -> service.create(mechanicService)).isInstanceOf(IllegalArgumentException.class);
 
-    @Nested
-    class FindByExternalId {
-        @Test
-        void shouldFindMechanicServiceByExternalId() {
-            UUID externalId = UUID.randomUUID();
-            var mechanicService = MechanicServiceHelper.generateMechanicService();
+			verify(repository, never()).save(any());
+		}
+	}
 
-            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(mechanicService));
+	@Nested
+	class FindByExternalId {
 
-            var found = service.findByExternalId(externalId);
+		@Test
+		void shouldFindMechanicServiceByExternalId() {
+			UUID externalId = UUID.randomUUID();
+			var mechanicService = MechanicServiceHelper.generateMechanicService();
 
-            assertThat(found)
-                    .usingRecursiveAssertion()
-                    .isEqualTo(mechanicService);
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(mechanicService));
 
-            verify(repository).findByExternalId(externalId);
-        }
+			var found = service.findByExternalId(externalId);
 
-        @Test
-        void shouldThrowExceptionWhenServiceNotFound() {
-            UUID externalId = UUID.randomUUID();
+			assertThat(found).usingRecursiveAssertion().isEqualTo(mechanicService);
 
-            when(repository.findByExternalId(externalId)).thenReturn(Optional.empty());
+			verify(repository).findByExternalId(externalId);
+		}
 
-            assertThatThrownBy(() -> service.findByExternalId(externalId))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage("Service not found for External ID: " + externalId);
-        }
-    }
+		@Test
+		void shouldThrowExceptionWhenServiceNotFound() {
+			UUID externalId = UUID.randomUUID();
 
-    @Nested
-    class Update {
-        @Test
-        void shouldUpdateMechanicServiceWhenExists() {
-            UUID externalId = UUID.randomUUID();
-            var current = MechanicServiceHelper.generateMechanicService();
-            var update = MechanicServiceHelper.generateMechanicService(
-                    null,
-                    "Alinhamento",
-                    "Atualizado",
-                    90,
-                    new BigDecimal("250.00")
-            );
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.empty());
 
-            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
-            when(repository.save(any(MechanicService.class))).thenAnswer(invocation -> invocation.getArgument(0));
+			assertThatThrownBy(() -> service.findByExternalId(externalId))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage("Service not found for External ID: " + externalId);
+		}
+	}
 
-            var updated = service.update(externalId, update);
+	@Nested
+	class Update {
 
-            assertThat(updated.getName()).isEqualTo("Alinhamento");
-            assertThat(updated.getDescription()).isEqualTo("Atualizado");
-            assertThat(updated.getEstimatedTimeMinutes()).isEqualTo(90);
-            assertThat(updated.getPrice()).isEqualByComparingTo("250.00");
+		@Test
+		void shouldUpdateMechanicServiceWhenExists() {
+			UUID externalId = UUID.randomUUID();
+			var current = MechanicServiceHelper.generateMechanicService();
+			var update = MechanicServiceHelper.generateMechanicService(
+				null,
+				"Alinhamento",
+				"Atualizado",
+				90,
+				new BigDecimal("250.00")
+			);
 
-            InOrder inOrder = inOrder(repository, validator, validator, repository);
-            inOrder.verify(repository).findByExternalId(externalId);
-            inOrder.verify(validator).validateUpdateEligibility(current);
-            inOrder.verify(validator).validate(current);
-            inOrder.verify(repository).save(current);
-        }
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
+			when(repository.save(any(MechanicService.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        @Test
-        void shouldThrowExceptionWhenServiceToUpdateNotFound() {
-            UUID externalId = UUID.randomUUID();
-            var mechanicService = new MechanicService();
+			var updated = service.update(externalId, update);
 
-            when(repository.findByExternalId(externalId)).thenReturn(Optional.empty());
+			assertThat(updated.getName()).isEqualTo("Alinhamento");
+			assertThat(updated.getDescription()).isEqualTo("Atualizado");
+			assertThat(updated.getEstimatedTimeMinutes()).isEqualTo(90);
+			assertThat(updated.getPrice()).isEqualByComparingTo("250.00");
 
-            assertThatThrownBy(() -> service.update(externalId, mechanicService))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage("Service not found with id: " + externalId);
-        }
+			InOrder inOrder = inOrder(repository, validator, validator, repository);
+			inOrder.verify(repository).findByExternalId(externalId);
+			inOrder.verify(validator).validateUpdateEligibility(current);
+			inOrder.verify(validator).validate(current);
+			inOrder.verify(repository).save(current);
+		}
 
-        @Test
-        void shouldNotSaveWhenUpdateValidationFails() {
-            UUID externalId = UUID.randomUUID();
-            var current = MechanicServiceHelper.generateMechanicService();
-            var update = MechanicServiceHelper.generateMechanicServiceWithoutId();
+		@Test
+		void shouldThrowExceptionWhenServiceToUpdateNotFound() {
+			UUID externalId = UUID.randomUUID();
+			var mechanicService = new MechanicService();
 
-            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
-            doThrow(new IllegalArgumentException()).when(validator).validate(current);
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.update(externalId, update))
-                    .isInstanceOf(IllegalArgumentException.class);
+			assertThatThrownBy(() -> service.update(externalId, mechanicService))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage("Service not found with id: " + externalId);
+		}
 
-            verify(repository, never()).save(any());
-        }
-    }
+		@Test
+		void shouldNotSaveWhenUpdateValidationFails() {
+			UUID externalId = UUID.randomUUID();
+			var current = MechanicServiceHelper.generateMechanicService();
+			var update = MechanicServiceHelper.generateMechanicServiceWithoutId();
 
-    @Nested
-    class Search {
-        @SuppressWarnings("unchecked")
-        private ArgumentCaptor<Example<MechanicService>> exampleCaptor() {
-            return (ArgumentCaptor<Example<MechanicService>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
-        }
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
+			doThrow(new IllegalArgumentException()).when(validator).validate(current);
 
-        @SuppressWarnings("unchecked")
-        private Example<MechanicService> anyExample() {
-            return any(Example.class);
-        }
+			assertThatThrownBy(() -> service.update(externalId, update)).isInstanceOf(IllegalArgumentException.class);
 
-        @Test
-        void shouldReturnMechanicServicesWhenSearchCriteriaIsProvided() {
-            var mechanicService = MechanicServiceHelper.generateMechanicService();
-            Pageable pageable = PageRequest.of(0, 10);
-            Page<MechanicService> expectedPage = new PageImpl<>(List.of(mechanicService));
-            ArgumentCaptor<Example<MechanicService>> captor = exampleCaptor();
+			verify(repository, never()).save(any());
+		}
+	}
 
-            when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+	@Nested
+	class Search {
 
-            var result = service.search(mechanicService.getName(), pageable);
+		@SuppressWarnings("unchecked")
+		private ArgumentCaptor<Example<MechanicService>> exampleCaptor() {
+			return (ArgumentCaptor<Example<MechanicService>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(
+				Example.class
+			);
+		}
 
-            assertThat(result).isEqualTo(expectedPage);
+		@SuppressWarnings("unchecked")
+		private Example<MechanicService> anyExample() {
+			return any(Example.class);
+		}
 
-            verify(repository).findAll(captor.capture(), eq(pageable));
-            assertThat(captor.getValue().getProbe().getName()).isEqualTo(mechanicService.getName());
-        }
-    }
+		@Test
+		void shouldReturnMechanicServicesWhenSearchCriteriaIsProvided() {
+			var mechanicService = MechanicServiceHelper.generateMechanicService();
+			Pageable pageable = PageRequest.of(0, 10);
+			Page<MechanicService> expectedPage = new PageImpl<>(List.of(mechanicService));
+			ArgumentCaptor<Example<MechanicService>> captor = exampleCaptor();
+
+			when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+
+			var result = service.search(mechanicService.getName(), pageable);
+
+			assertThat(result).isEqualTo(expectedPage);
+
+			verify(repository).findAll(captor.capture(), eq(pageable));
+			assertThat(captor.getValue().getProbe().getName()).isEqualTo(mechanicService.getName());
+		}
+	}
 }

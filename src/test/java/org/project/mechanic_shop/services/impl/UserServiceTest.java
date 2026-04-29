@@ -1,6 +1,14 @@
 package org.project.mechanic_shop.services.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -8,10 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.repositories.UserRepository;
@@ -20,212 +24,192 @@ import org.project.mechanic_shop.utils.UserHelper;
 import org.project.mechanic_shop.validators.UserValidator;
 import org.springframework.data.domain.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    private UserService userService;
+	private UserService userService;
 
-    @Mock
-    private UserRepository userRepository;
+	@Mock
+	private UserRepository userRepository;
 
-    @Mock
-    private UserValidator userValidator;
+	@Mock
+	private UserValidator userValidator;
 
-    @BeforeEach
-    void setup() {
-        userService = new UserServiceImpl(userRepository, userValidator);
-    }
+	@BeforeEach
+	void setup() {
+		userService = new UserServiceImpl(userRepository, userValidator);
+	}
 
-    @Nested
-    class Create {
-        @Test
-        void shouldCreateUser() {
-            var user = UserHelper.generateUser();
+	@Nested
+	class Create {
 
-            when(userRepository.save(user))
-                    .thenReturn(user);
+		@Test
+		void shouldCreateUser() {
+			var user = UserHelper.generateUser();
 
-            var userSave = userService.create(user);
+			when(userRepository.save(user)).thenReturn(user);
 
-            InOrder inOrder = inOrder(userValidator, userRepository);
+			var userSave = userService.create(user);
 
-            inOrder.verify(userValidator).validate(user);
-            inOrder.verify(userRepository).save(user);
+			InOrder inOrder = inOrder(userValidator, userRepository);
 
-            assertThat(userSave)
-                    .usingRecursiveAssertion()
-                    .ignoringAllNullFields()
-                    .isEqualTo(user);
-        }
+			inOrder.verify(userValidator).validate(user);
+			inOrder.verify(userRepository).save(user);
 
-        @Test
-        void shouldNotSaveWhenValidationFails() {
-            var user = UserHelper.generateUser();
+			assertThat(userSave).usingRecursiveAssertion().ignoringAllNullFields().isEqualTo(user);
+		}
 
-            doThrow(new IllegalArgumentException())
-                    .when(userValidator).validate(user);
+		@Test
+		void shouldNotSaveWhenValidationFails() {
+			var user = UserHelper.generateUser();
 
-            assertThatThrownBy(() -> userService.create(user))
-                    .isInstanceOf(IllegalArgumentException.class);
+			doThrow(new IllegalArgumentException()).when(userValidator).validate(user);
 
-            verify(userRepository, never()).save(any());
-        }
-    }
+			assertThatThrownBy(() -> userService.create(user)).isInstanceOf(IllegalArgumentException.class);
 
-    @Nested
-    class FindByExternalId {
-        @Test
-        void shouldFindUserByExternalId() {
-            UUID externalId = UUID.randomUUID();
-            var user = UserHelper.generateUser();
+			verify(userRepository, never()).save(any());
+		}
+	}
 
-            when(userRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(user));
+	@Nested
+	class FindByExternalId {
 
-            var userFind = userService.findByExternalId(externalId);
+		@Test
+		void shouldFindUserByExternalId() {
+			UUID externalId = UUID.randomUUID();
+			var user = UserHelper.generateUser();
 
-            assertThat(userFind)
-                    .usingRecursiveAssertion()
-                    .isEqualTo(user);
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.of(user));
 
-            verify(userRepository).findByExternalId(externalId);
-        }
+			var userFind = userService.findByExternalId(externalId);
 
-        @Test
-        void shouldThrowExceptionWhenUserNotFound() {
-            UUID externalId = UUID.randomUUID();
+			assertThat(userFind).usingRecursiveAssertion().isEqualTo(user);
 
-            when(userRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.empty());
+			verify(userRepository).findByExternalId(externalId);
+		}
 
-            assertThatThrownBy(() -> userService.findByExternalId(externalId))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage(String.format("User not found for External ID: %s", externalId));
-        }
-    }
+		@Test
+		void shouldThrowExceptionWhenUserNotFound() {
+			UUID externalId = UUID.randomUUID();
 
-    @Nested
-    class Update {
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.empty());
 
-        @Test
-        void shouldUpdateUserWhenExists() {
-            UUID externalId = UUID.randomUUID();
-            var userFind = UserHelper.generateUser();
+			assertThatThrownBy(() -> userService.findByExternalId(externalId))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage(String.format("User not found for External ID: %s", externalId));
+		}
+	}
 
-            var userToUpdate = UserHelper.generateUser();
-            userToUpdate.setName("NOME_ATUALIZADO");
-            userToUpdate.setActive(false);
+	@Nested
+	class Update {
 
-            when(userRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(userFind));
+		@Test
+		void shouldUpdateUserWhenExists() {
+			UUID externalId = UUID.randomUUID();
+			var userFind = UserHelper.generateUser();
 
-            when(userRepository.save(any()))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
+			var userToUpdate = UserHelper.generateUser();
+			userToUpdate.setName("NOME_ATUALIZADO");
+			userToUpdate.setActive(false);
 
-            var userUpdated = userService.update(externalId, userToUpdate);
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.of(userFind));
 
-            assertThat(userUpdated.getName()).isEqualTo("NOME_ATUALIZADO");
-            assertThat(userUpdated.getPassword())
-                    .isEqualTo("Teste@123");
-            assertThat(userUpdated.getActive()).isFalse();
+			when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-            assertThat(userUpdated.getEmail())
-                    .isEqualTo(userFind.getEmail());
+			var userUpdated = userService.update(externalId, userToUpdate);
 
-            InOrder inOrder = inOrder(userRepository, userValidator, userRepository);
+			assertThat(userUpdated.getName()).isEqualTo("NOME_ATUALIZADO");
+			assertThat(userUpdated.getPassword()).isEqualTo("Teste@123");
+			assertThat(userUpdated.getActive()).isFalse();
 
-            inOrder.verify(userRepository).findByExternalId(externalId);
-            inOrder.verify(userValidator).validateUpdateEligibility(userFind);
-            inOrder.verify(userValidator).validate(userFind);
-            inOrder.verify(userRepository).save(userFind);
-        }
+			assertThat(userUpdated.getEmail()).isEqualTo(userFind.getEmail());
 
-        @Test
-        void shouldThrowExceptionWhenUserToUpdateNotFound() {
-            UUID externalId = UUID.randomUUID();
-            var user = UserHelper.generateUser();
+			InOrder inOrder = inOrder(userRepository, userValidator, userRepository);
 
-            when(userRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.empty());
+			inOrder.verify(userRepository).findByExternalId(externalId);
+			inOrder.verify(userValidator).validateUpdateEligibility(userFind);
+			inOrder.verify(userValidator).validate(userFind);
+			inOrder.verify(userRepository).save(userFind);
+		}
 
-            assertThatThrownBy(() -> userService.update(externalId, user))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessage(String.format("User not found with External ID: %s", externalId));
-        }
+		@Test
+		void shouldThrowExceptionWhenUserToUpdateNotFound() {
+			UUID externalId = UUID.randomUUID();
+			var user = UserHelper.generateUser();
 
-        @Test
-        void shouldNotUpdateWhenValidationFails() {
-            UUID externalId = UUID.randomUUID();
-            var userFind = UserHelper.generateUser();
-            var userToUpdate = UserHelper.generateUser();
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.empty());
 
-            when(userRepository.findByExternalId(externalId))
-                    .thenReturn(Optional.of(userFind));
+			assertThatThrownBy(() -> userService.update(externalId, user))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage(String.format("User not found with External ID: %s", externalId));
+		}
 
-            doThrow(new IllegalArgumentException())
-                    .when(userValidator).validate(userFind);
+		@Test
+		void shouldNotUpdateWhenValidationFails() {
+			UUID externalId = UUID.randomUUID();
+			var userFind = UserHelper.generateUser();
+			var userToUpdate = UserHelper.generateUser();
 
-            assertThatThrownBy(() -> userService.update(externalId, userToUpdate)).isInstanceOf(IllegalArgumentException.class);
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.of(userFind));
 
-            verify(userRepository, never()).save(any());
-        }
-    }
+			doThrow(new IllegalArgumentException()).when(userValidator).validate(userFind);
 
-    @Nested
-    class Search {
-        @SuppressWarnings("unchecked")
-        private ArgumentCaptor<Example<User>> exampleUserCaptor() {
-            return (ArgumentCaptor<Example<User>>) (ArgumentCaptor<?>)
-                    ArgumentCaptor.forClass(Example.class);
-        }
+			assertThatThrownBy(() -> userService.update(externalId, userToUpdate)).isInstanceOf(
+				IllegalArgumentException.class
+			);
 
-        @SuppressWarnings("unchecked")
-        private Example<User> getAnyExample() {
-            return any(Example.class);
-        }
+			verify(userRepository, never()).save(any());
+		}
+	}
 
-        @Test
-        void shouldReturnUsersWhenSearchCriteriaIsProvided() {
-            var user = UserHelper.generateUser();
-            User expected = new User();
-            expected.setDocument(user.getDocument());
-            expected.setName(user.getName());
-            expected.setEmail(user.getEmail());
+	@Nested
+	class Search {
 
-            ArgumentCaptor<Example<User>> captor = exampleUserCaptor();
+		@SuppressWarnings("unchecked")
+		private ArgumentCaptor<Example<User>> exampleUserCaptor() {
+			return (ArgumentCaptor<Example<User>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
+		}
 
-            Pageable pageable = PageRequest.of(0, 10);
+		@SuppressWarnings("unchecked")
+		private Example<User> getAnyExample() {
+			return any(Example.class);
+		}
 
-            Page<User> expectedPage = new PageImpl<>(List.of(user));
+		@Test
+		void shouldReturnUsersWhenSearchCriteriaIsProvided() {
+			var user = UserHelper.generateUser();
+			User expected = new User();
+			expected.setDocument(user.getDocument());
+			expected.setName(user.getName());
+			expected.setEmail(user.getEmail());
 
-            when(userRepository.findAll(getAnyExample(), eq(pageable)))
-                    .thenReturn(expectedPage);
+			ArgumentCaptor<Example<User>> captor = exampleUserCaptor();
 
-            var userPage = userService.search(
-                    user.getDocument(),
-                    user.getName(),
-                    user.getEmail(),
-                    user.getRole(),
-                    pageable
-            );
+			Pageable pageable = PageRequest.of(0, 10);
 
-            assertThat(userPage).isEqualTo(expectedPage);
+			Page<User> expectedPage = new PageImpl<>(List.of(user));
 
-            verify(userRepository).findAll(captor.capture(), eq(pageable));
+			when(userRepository.findAll(getAnyExample(), eq(pageable))).thenReturn(expectedPage);
 
-            Example<User> capturedExample = captor.getValue();
+			var userPage = userService.search(
+				user.getDocument(),
+				user.getName(),
+				user.getEmail(),
+				user.getRole(),
+				pageable
+			);
 
-            User probe = capturedExample.getProbe();
+			assertThat(userPage).isEqualTo(expectedPage);
 
-            assertThat(probe.getDocument()).isEqualTo(user.getDocument());
-            assertThat(probe.getName()).isEqualTo(user.getName());
-            assertThat(probe.getEmail()).isEqualTo(user.getEmail());
-        }
-    }
+			verify(userRepository).findAll(captor.capture(), eq(pageable));
+
+			Example<User> capturedExample = captor.getValue();
+
+			User probe = capturedExample.getProbe();
+
+			assertThat(probe.getDocument()).isEqualTo(user.getDocument());
+			assertThat(probe.getName()).isEqualTo(user.getName());
+			assertThat(probe.getEmail()).isEqualTo(user.getEmail());
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package org.project.mechanic_shop.services.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.models.User;
@@ -15,86 +16,77 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository repository;
-    private final UserValidator validator;
+	private final UserRepository repository;
+	private final UserValidator validator;
 
-    @Override
-    @Transactional
-    public User create(User obj) {
-        log.info("Creating new User with document: {}", obj.getDocument());
+	@Override
+	@Transactional
+	public User create(User obj) {
+		log.info("Creating new User with document: {}", obj.getDocument());
 
-        validator.validate(obj);
+		validator.validate(obj);
 
-        return repository.save(obj);
-    }
+		return repository.save(obj);
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public User findByExternalId(UUID externalId) {
-        return repository.findByExternalId(externalId).orElseThrow(() -> {
-            log.warn("User not found. Action: GET | Target External ID: {}", externalId);
-            return new EntityNotFoundException("User not found for External ID: " + externalId);
-        });
-    }
+	@Override
+	@Transactional(readOnly = true)
+	public User findByExternalId(UUID externalId) {
+		return repository
+			.findByExternalId(externalId)
+			.orElseThrow(() -> {
+				log.warn("User not found. Action: GET | Target External ID: {}", externalId);
+				return new EntityNotFoundException("User not found for External ID: " + externalId);
+			});
+	}
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<User> search(String document, String name, String email, String role, Pageable pageable) {
-        log.info("Searching Users with filters - document: {}, name: {}, email: {}", document, name, email);
+	@Override
+	@Transactional(readOnly = true)
+	public Page<User> search(String document, String name, String email, String role, Pageable pageable) {
+		log.info("Searching Users with filters - document: {}, name: {}, email: {}", document, name, email);
 
-        var user = new User();
-        user.setDocument(document);
-        user.setName(name);
-        user.setEmail(email);
-        user.setRole(role);
+		var user = new User();
+		user.setDocument(document);
+		user.setName(name);
+		user.setEmail(email);
+		user.setRole(role);
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnorePaths(
-                        "id",
-                        "externalId",
-                        "phone",
-                        "createdAt",
-                        "createdFor",
-                        "lastUpdatedAt",
-                        "lastUpdatedFor"
-                )
-                .withIgnoreNullValues()
-                .withIgnoreCase()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
+		ExampleMatcher matcher = ExampleMatcher.matching()
+			.withIgnorePaths("id", "externalId", "phone", "createdAt", "createdFor", "lastUpdatedAt", "lastUpdatedFor")
+			.withIgnoreNullValues()
+			.withIgnoreCase()
+			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
 
-        Example<User> example = Example.of(user, matcher);
+		Example<User> example = Example.of(user, matcher);
 
-        return repository.findAll(example, pageable);
-    }
+		return repository.findAll(example, pageable);
+	}
 
-    @Override
-    @Transactional
-    public User update(UUID externalId, User update) {
+	@Override
+	@Transactional
+	public User update(UUID externalId, User update) {
+		var obj = repository
+			.findByExternalId(externalId)
+			.orElseThrow(() -> new EntityNotFoundException("User not found with External ID: " + externalId));
 
-        var obj = repository.findByExternalId(externalId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with External ID: "+ externalId));
+		log.info("Updating User with ID: {}", obj.getId());
 
-        log.info("Updating User with ID: {}", obj.getId());
+		validator.validateUpdateEligibility(obj);
 
-        validator.validateUpdateEligibility(obj);
+		obj.setName(update.getName());
+		obj.setEmail(update.getEmail());
+		obj.setPhone(update.getPhone());
+		obj.setDocument(update.getDocument());
 
-        obj.setName(update.getName());
-        obj.setEmail(update.getEmail());
-        obj.setPhone(update.getPhone());
-        obj.setDocument(update.getDocument());
+		obj.setActive(update.getActive());
 
-        obj.setActive(update.getActive());
+		validator.validate(obj);
 
-        validator.validate(obj);
-
-
-        return repository.save(obj);
-    }
+		return repository.save(obj);
+	}
 }

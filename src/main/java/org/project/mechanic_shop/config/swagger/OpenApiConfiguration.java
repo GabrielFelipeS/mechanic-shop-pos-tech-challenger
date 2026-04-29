@@ -11,28 +11,18 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @OpenAPIDefinition(
-        info = @Info(
-                title = "Qms Vision API",
-                version = "v1",
-                contact = @Contact(
-                        name = "Eddie Marley",
-                        email = "marley_eddie@hotmail.com"
-                )
-        ),
-        security = {@SecurityRequirement(name = "bearerAuth")
-        }
+	info = @Info(
+		title = "Qms Vision API",
+		version = "v1",
+		contact = @Contact(name = "Eddie Marley", email = "marley_eddie@hotmail.com")
+	),
+	security = { @SecurityRequirement(name = "bearerAuth") }
 )
-
-
 @SecurityScheme(
-        name = "bearerAuth",
-        type = SecuritySchemeType.HTTP,
-        scheme = "bearer",
-        bearerFormat = "JWT",
-        in = SecuritySchemeIn.HEADER
+	name = "bearerAuth",
+	type = SecuritySchemeType.HTTP,
+	scheme = "bearer",
+	bearerFormat = "JWT",
+	in = SecuritySchemeIn.HEADER
 )
-
-public class OpenApiConfiguration {
-
-
-}
+public class OpenApiConfiguration {}

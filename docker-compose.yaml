@@ -1,8 +1,6 @@
 networks:
   mechanic-shop-network:
 
-
-
 services:
   postgres:
     image: postgres:17
@@ -82,13 +80,9 @@ services:
       SEED_BY_DOC: ${SEED_BY_DOC}
       SEED_BY_ROLE: ${SEED_BY_ROLE}
 
-
       SMTP_ACTIVE: ${SMTP_ACTIVE}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
-
-
-
 
 volumes:
   postgres_data:

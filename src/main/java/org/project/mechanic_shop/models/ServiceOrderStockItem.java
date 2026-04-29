@@ -1,13 +1,12 @@
 package org.project.mechanic_shop.models;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "service_order_stock_item")
@@ -17,27 +16,27 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ServiceOrderStockItem {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_order_id", nullable = false)
-    private ServiceOrder serviceOrder;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "service_order_id", nullable = false)
+	private ServiceOrder serviceOrder;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_item_id", nullable = false)
-    private StockItem stockItem;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "stock_item_id", nullable = false)
+	private StockItem stockItem;
 
-    @Column(nullable = false)
-    private StockItemTypeEnum stockItemType;
+	@Column(nullable = false)
+	private StockItemTypeEnum stockItemType;
 
-    @Column(nullable = false)
-    private Integer quantity;
+	@Column(nullable = false)
+	private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice;
+	@Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
+	private BigDecimal unitPrice;
 
-    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalPrice;
+	@Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+	private BigDecimal totalPrice;
 }

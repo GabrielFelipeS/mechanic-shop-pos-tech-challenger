@@ -20,59 +20,71 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class ServiceOrderNotificationListener {
 
-    private final EmailService emailService;
-    private final ServiceOrderService serviceOrderService;
+	private final EmailService emailService;
+	private final ServiceOrderService serviceOrderService;
 
-    @Async
-    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleStatusChangedEvent(ServiceOrderStatusChangedEvent event) {
-        ServiceOrder order = serviceOrderService.findByExternalId(event.serviceOrderExternalId());
-        User customer = order.getVehicle().getOwner();
-        User mechanic = order.getResponsibleMechanic();
+	@Async
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	public void handleStatusChangedEvent(ServiceOrderStatusChangedEvent event) {
+		ServiceOrder order = serviceOrderService.findByExternalId(event.serviceOrderExternalId());
+		User customer = order.getVehicle().getOwner();
+		User mechanic = order.getResponsibleMechanic();
 
-        String customerEmail = (customer != null) ? customer.getEmail() : null;
-        String mechanicEmail = (mechanic != null) ? mechanic.getEmail() : null;
+		String customerEmail = (customer != null) ? customer.getEmail() : null;
+		String mechanicEmail = (mechanic != null) ? mechanic.getEmail() : null;
 
-        log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
+		log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
 
-        switch (event.newStatus()) {
+		switch (event.newStatus()) {
+			case RECEIVED -> log.debug("No email mapped for RECEIVED status. Waiting for diagnosis to start.");
+			case DIAGNOSIS -> sendEmail(
+				customerEmail,
+				"Service Update: Diagnosis Started",
+				"Your vehicle is now being evaluated by our mechanics. We will send you the full quote soon."
+			);
+			case PENDING_APPROVAL -> sendEmail(
+				customerEmail,
+				"Action Required: Quote Pending Approval",
+				"The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs."
+			);
+			case IN_PROGRESS -> sendEmail(
+				mechanicEmail,
+				"Task Approved: Start Repairs",
+				"The customer has approved the quote for OS #" +
+					order.getId() +
+					". You can now proceed with the service."
+			);
+			case CANCELED -> {
+				sendEmail(
+					customerEmail,
+					"Service Cancelled",
+					"As requested, the service order has been closed. Please arrange to pick up your vehicle at your earliest convenience."
+				);
+				sendEmail(
+					mechanicEmail,
+					"Service Cancelled by Customer",
+					"The quote for OS #" +
+						order.getId() +
+						" was rejected. The service is finalized and no further action is required."
+				);
+			}
+			case COMPLETED -> sendEmail(
+				customerEmail,
+				"Service Completed! Your car is ready",
+				"Great news! The maintenance of your vehicle is finished. You can come by to pick it up."
+			);
+			case DELIVERED -> sendEmail(
+				customerEmail,
+				"Thank you for choosing Mechanic Shop!",
+				"Your vehicle has been successfully delivered. We appreciate your business and hope to see you for your next revision!"
+			);
+		}
+	}
 
-            case RECEIVED ->
-                    log.debug("No email mapped for RECEIVED status. Waiting for diagnosis to start.");
-
-            case DIAGNOSIS ->
-                    sendEmail(customerEmail, "Service Update: Diagnosis Started",
-                            "Your vehicle is now being evaluated by our mechanics. We will send you the full quote soon.");
-
-            case PENDING_APPROVAL ->
-                    sendEmail(customerEmail, "Action Required: Quote Pending Approval",
-                            "The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs.");
-
-            case IN_PROGRESS ->
-                    sendEmail(mechanicEmail, "Task Approved: Start Repairs",
-                            "The customer has approved the quote for OS #" + order.getId() + ". You can now proceed with the service.");
-
-            case CANCELED -> {
-                sendEmail(customerEmail, "Service Cancelled",
-                        "As requested, the service order has been closed. Please arrange to pick up your vehicle at your earliest convenience.");
-                sendEmail(mechanicEmail, "Service Cancelled by Customer",
-                        "The quote for OS #" + order.getId() + " was rejected. The service is finalized and no further action is required.");
-            }
-
-            case COMPLETED ->
-                    sendEmail(customerEmail, "Service Completed! Your car is ready",
-                            "Great news! The maintenance of your vehicle is finished. You can come by to pick it up.");
-
-            case DELIVERED ->
-                    sendEmail(customerEmail, "Thank you for choosing Mechanic Shop!",
-                            "Your vehicle has been successfully delivered. We appreciate your business and hope to see you for your next revision!");
-        }
-    }
-
-    private void sendEmail(String to, String subject, String body) {
-        if (to != null) {
-            emailService.sendEmail(new String[]{to}, subject, body);
-        }
-    }
+	private void sendEmail(String to, String subject, String body) {
+		if (to != null) {
+			emailService.sendEmail(new String[] { to }, subject, body);
+		}
+	}
 }

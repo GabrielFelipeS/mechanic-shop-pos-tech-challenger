@@ -9,18 +9,19 @@ import org.springframework.context.annotation.Bean;
 
 @TestConfiguration
 public class SecurityConfig {
-    @Bean
-    TokenService tokenService() {
-        return Mockito.mock(TokenService.class);
-    }
 
-    @Bean
-    AuthorizationService authorizationService() {
-        return Mockito.mock(AuthorizationService.class);
-    }
+	@Bean
+	TokenService tokenService() {
+		return Mockito.mock(TokenService.class);
+	}
 
-    @Bean
-    SecurityFilter securityFilter() {
-        return Mockito.mock(SecurityFilter.class);
-    }
+	@Bean
+	AuthorizationService authorizationService() {
+		return Mockito.mock(AuthorizationService.class);
+	}
+
+	@Bean
+	SecurityFilter securityFilter() {
+		return Mockito.mock(SecurityFilter.class);
+	}
 }

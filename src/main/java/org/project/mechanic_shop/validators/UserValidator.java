@@ -1,58 +1,54 @@
 package org.project.mechanic_shop.validators;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.project.mechanic_shop.models.User;
-
 import org.project.mechanic_shop.repositories.UserRepository;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class UserValidator {
 
-    private final UserRepository repository;
+	private final UserRepository repository;
 
-    public void validate(User user) {
-        if (existsUserByDocument(user)) {
+	public void validate(User user) {
+		if (existsUserByDocument(user)) {
+			throw new IllegalArgumentException("A User with this document already exists: " + user.getDocument());
+		}
 
-            throw new IllegalArgumentException("A User with this document already exists: " + user.getDocument());
-        }
+		if (existsUserByEmail(user)) {
+			throw new IllegalArgumentException("A User with this email already exists: " + user.getEmail());
+		}
+	}
 
-        if (existsUserByEmail(user)) {
-            throw new IllegalArgumentException("A User with this email already exists: " + user.getEmail());
-        }
-    }
+	public void validateUpdateEligibility(User obj) {
+		if (obj.getId() == null) {
+			throw new IllegalArgumentException("You cannot update an object without an ID");
+		}
 
-    public void validateUpdateEligibility(User obj) {
-        if (obj.getId() == null) {
-            throw new IllegalArgumentException("You cannot update an object without an ID");
-        }
+		if (Boolean.FALSE.equals(obj.getActive())) {
+			throw new IllegalArgumentException("You cannot update an inactive object");
+		}
+	}
 
+	private boolean existsUserByDocument(User user) {
+		Optional<User> result = repository.findByDocument(user.getDocument());
 
-        if (Boolean.FALSE.equals(obj.getActive())) {
-             throw new IllegalArgumentException("You cannot update an inactive object");
-        }
-    }
+		if (user.getId() == null) {
+			return result.isPresent();
+		}
 
-    private boolean existsUserByDocument(User user) {
-        Optional<User> result = repository.findByDocument(user.getDocument());
+		return result.isPresent() && !user.getId().equals(result.get().getId());
+	}
 
-        if (user.getId() == null) {
-            return result.isPresent();
-        }
+	private boolean existsUserByEmail(User user) {
+		Optional<User> result = repository.findByEmail(user.getEmail());
 
-        return result.isPresent() && !user.getId().equals(result.get().getId());
-    }
+		if (user.getId() == null) {
+			return result.isPresent();
+		}
 
-    private boolean existsUserByEmail(User user) {
-        Optional<User> result = repository.findByEmail(user.getEmail());
-
-        if (user.getId() == null) {
-            return result.isPresent();
-        }
-
-        return result.isPresent() && !user.getId().equals(result.get().getId());
-    }
+		return result.isPresent() && !user.getId().equals(result.get().getId());
+	}
 }

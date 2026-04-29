@@ -6,10 +6,9 @@ import org.project.mechanic_shop.models.StockItem;
 
 @Mapper(componentModel = "spring")
 public interface StockItemMapper {
+	StockItem toEntity(StockItemManDto stockItemManDto);
 
-    StockItem toEntity(StockItemManDto stockItemManDto);
+	StockItemShortDto toShortDto(StockItem stockItem);
 
-    StockItemShortDto toShortDto(StockItem stockItem);
-
-    StockItemDto toDto(StockItem stockItem);
+	StockItemDto toDto(StockItem stockItem);
 }

@@ -9,12 +9,11 @@ import org.project.mechanic_shop.models.Vehicle;
 
 @Mapper(componentModel = "spring")
 public interface VehicleMapper {
+	@Mapping(target = "owner", ignore = true)
+	Vehicle toEntity(VehicleManDto vehicleManDto);
 
-    @Mapping(target = "owner", ignore = true)
-    Vehicle toEntity(VehicleManDto vehicleManDto);
+	@Mapping(target = "ownerName", source = "owner.name")
+	VehicleShortDto toShortDto(Vehicle vehicle);
 
-    @Mapping(target = "ownerName", source = "owner.name")
-    VehicleShortDto toShortDto(Vehicle vehicle);
-
-    VehicleDto toDto(Vehicle vehicle);
+	VehicleDto toDto(Vehicle vehicle);
 }

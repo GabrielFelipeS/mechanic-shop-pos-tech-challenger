@@ -8,8 +8,6 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MechanicShopApplicationTests {
 
-    @Test
-    void contextLoads() {
-    }
-
+	@Test
+	void contextLoads() {}
 }

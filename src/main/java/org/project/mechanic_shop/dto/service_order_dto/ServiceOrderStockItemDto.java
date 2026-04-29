@@ -5,10 +5,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record ServiceOrderStockItemDto(
-        UUID partExternalId,
-        String partName,
-        String partCode,
-        Integer quantity,
-        BigDecimal unitPrice,
-        BigDecimal totalPrice
+	UUID partExternalId,
+	String partName,
+	String partCode,
+	Integer quantity,
+	BigDecimal unitPrice,
+	BigDecimal totalPrice
 ) implements Serializable {}

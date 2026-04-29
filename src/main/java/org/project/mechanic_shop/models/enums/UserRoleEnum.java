@@ -6,21 +6,20 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum UserRoleEnum {
+	WAREHOUSE_CLERK("Warehouse Clerk", "Responsible for managing inventory and parts."),
 
-    WAREHOUSE_CLERK("Warehouse Clerk", "Responsible for managing inventory and parts."),
+	RECEPTIONIST("Receptionist", "Handles customer check-ins, scheduling, and general inquiries."),
 
-    RECEPTIONIST("Receptionist", "Handles customer check-ins, scheduling, and general inquiries."),
+	MECHANIC("Mechanic", "Performs vehicle maintenance, inspections, and repairs."),
 
-    MECHANIC("Mechanic", "Performs vehicle maintenance, inspections, and repairs."),
+	SALESPERSON("Salesperson", "Responsible for selling services, parts, and interacting with clients."),
 
-    SALESPERSON("Salesperson", "Responsible for selling services, parts, and interacting with clients."),
+	CUSTOMER("Customer", "Client of the mechanic shop."),
 
-    CUSTOMER("Customer", "Client of the mechanic shop."),
+	ADMIN("Admin", "System administrator with full access to all modules."),
 
-    ADMIN("Admin", "System administrator with full access to all modules."),
+	BUYER("Buyer", "Responsible for purchasing parts and managing supplier relationships.");
 
-    BUYER("Buyer", "Responsible for purchasing parts and managing supplier relationships.");
-
-    private final String label;
-    private final String description;
+	private final String label;
+	private final String description;
 }

@@ -8,8 +8,7 @@ import org.project.mechanic_shop.models.MechanicService;
 
 @Mapper(componentModel = "spring")
 public interface MechanicServiceMapper {
-
-    MechanicService toEntity(MechanicServiceManDto dto);
-    MechanicServiceShortDto toShortDto(MechanicService entity);
-    MechanicServiceDto toDto(MechanicService entity);
+	MechanicService toEntity(MechanicServiceManDto dto);
+	MechanicServiceShortDto toShortDto(MechanicService entity);
+	MechanicServiceDto toDto(MechanicService entity);
 }

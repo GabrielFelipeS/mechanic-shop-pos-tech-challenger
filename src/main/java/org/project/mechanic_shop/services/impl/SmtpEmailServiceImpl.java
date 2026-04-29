@@ -14,25 +14,24 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(name = "SMTP_ACTIVE", havingValue = "true")
 public class SmtpEmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+	private final JavaMailSender mailSender;
 
-    @Override
-    public void sendEmail(String[] to, String subject, String body) {
-        log.info("Preparing to send real email to {} users", to.length);
+	@Override
+	public void sendEmail(String[] to, String subject, String body) {
+		log.info("Preparing to send real email to {} users", to.length);
 
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            String senderEmail = "sistema@mechanicshop.com";
-            message.setFrom(senderEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
+		try {
+			SimpleMailMessage message = new SimpleMailMessage();
+			String senderEmail = "sistema@mechanicshop.com";
+			message.setFrom(senderEmail);
+			message.setTo(to);
+			message.setSubject(subject);
+			message.setText(body);
 
-            mailSender.send(message);
-            log.info("Email successfully sent to {} users", to.length);
-        } catch (Exception e) {
-            log.error("Failed to send email to {}. Error: {}", to, e.getMessage());
-
-        }
-    }
+			mailSender.send(message);
+			log.info("Email successfully sent to {} users", to.length);
+		} catch (Exception e) {
+			log.error("Failed to send email to {}. Error: {}", to, e.getMessage());
+		}
+	}
 }

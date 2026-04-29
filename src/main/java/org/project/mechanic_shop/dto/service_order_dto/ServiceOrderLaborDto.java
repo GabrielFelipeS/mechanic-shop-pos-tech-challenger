@@ -5,9 +5,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record ServiceOrderLaborDto(
-        UUID mechanicServiceExternalId,
-        String serviceName,
-        Integer quantity,
-        BigDecimal unitPrice,
-        BigDecimal totalPrice
+	UUID mechanicServiceExternalId,
+	String serviceName,
+	Integer quantity,
+	BigDecimal unitPrice,
+	BigDecimal totalPrice
 ) implements Serializable {}

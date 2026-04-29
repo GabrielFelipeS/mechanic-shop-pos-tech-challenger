@@ -8,13 +8,12 @@ import java.util.UUID;
  * DTO for {@link org.project.mechanic_shop.models.Vehicle}
  */
 public record VehicleShortDto(
-        UUID externalId,
-        LocalDateTime createdAt,
-        LocalDateTime lastUpdatedAt,
-        String licensePlate,
-        String brand,
-        String model,
-        Integer year,
-        String ownerName
-) implements Serializable {
-}
+	UUID externalId,
+	LocalDateTime createdAt,
+	LocalDateTime lastUpdatedAt,
+	String licensePlate,
+	String brand,
+	String model,
+	Integer year,
+	String ownerName
+) implements Serializable {}

@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record ServiceOrderCreateDto(
-        @NotNull UUID vehicleExternalId,
-        @NotBlank String customerComplaint,
-        Integer odometerReading,
-        UUID mechanicExternalId
+	@NotNull UUID vehicleExternalId,
+	@NotBlank String customerComplaint,
+	Integer odometerReading,
+	UUID mechanicExternalId
 ) {}

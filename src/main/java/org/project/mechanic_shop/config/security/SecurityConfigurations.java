@@ -1,6 +1,5 @@
 package org.project.mechanic_shop.config.security;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,37 +22,40 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfigurations {
 
+	private final SecurityFilter securityFilter;
 
-    private final SecurityFilter securityFilter;
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+		return http
+			.csrf(AbstractHttpConfigurer::disable)
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.authorizeHttpRequests(authorize ->
+				authorize
+					.requestMatchers(HttpMethod.POST, "/api/auth/login")
+					.permitAll()
+					.requestMatchers(
+						"/v2/api-docs/**",
+						"/v3/api-docs/**",
+						"/swagger-resources/**",
+						"/swagger-ui.html",
+						"/swagger-ui/**",
+						"/webjars/**"
+					)
+					.permitAll()
+					.anyRequest()
+					.authenticated()
+			)
+			.addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+			.build();
+	}
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(
-                                "/v2/api-docs/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/webjars/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) {
+		return authenticationConfiguration.getAuthenticationManager();
+	}
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 }
