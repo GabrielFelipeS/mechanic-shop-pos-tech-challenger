@@ -1,6 +1,5 @@
 package org.project.mechanic_shop.controllers;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.common.responses.ApiResponse;
 import org.project.mechanic_shop.dto.stock_item_dto.StockItemDto;
 import org.project.mechanic_shop.dto.stock_item_dto.StockItemManDto;
-import org.project.mechanic_shop.dto.stock_item_dto.StockWithdrawalDto;
 import org.project.mechanic_shop.mappers.StockItemMapper;
 import org.project.mechanic_shop.models.StockItem;
 import org.project.mechanic_shop.services.StockItemService;
@@ -103,22 +101,5 @@ public class StockItemController {
                 SUCCESS_MESSAGE,
                 listDto
         ));
-    }
-
-    @Operation(summary = "Withdraw stock (Reduce inventory)",
-            description = "It deducts the specified quantity from the current stock. If an item is missing, it sends an alert to the warehouse staff.")
-    @PatchMapping("/{id}/withdraw")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC', 'WAREHOUSE_CLERK')")
-    public ResponseEntity<ApiResponse> withdrawStock(
-            @PathVariable UUID id,
-            @RequestBody @Valid StockWithdrawalDto dto) {
-
-        log.info("API Request: Withdraw {} units from item {}", dto.quantity(), id);
-
-        service.withdrawStock(id, dto.quantity());
-
-        return ResponseEntity.ok(
-                new ApiResponse(HttpStatus.OK.value(), "Inventory updated successfully.", null)
-        );
     }
 }
