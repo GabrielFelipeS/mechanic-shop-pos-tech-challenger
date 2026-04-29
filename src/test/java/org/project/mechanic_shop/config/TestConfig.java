@@ -24,5 +24,4 @@ public class TestConfig {
         return Mockito.mock(UserRepository.class);
     }
 
-
 }
