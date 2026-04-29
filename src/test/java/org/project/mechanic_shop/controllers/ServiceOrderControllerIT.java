@@ -5,14 +5,16 @@ import org.junit.jupiter.api.Test;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStatusUpdateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
+import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetResponseDto;
+import org.project.mechanic_shop.models.Budget;
 import org.project.mechanic_shop.models.MechanicService;
 import org.project.mechanic_shop.models.ServiceOrder;
 import org.project.mechanic_shop.models.ServiceOrderStockItem;
 import org.project.mechanic_shop.models.StockItem;
 import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.models.Vehicle;
+import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
 import org.project.mechanic_shop.models.enums.UserRoleEnum;
@@ -38,7 +40,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -115,7 +116,9 @@ class ServiceOrderControllerIT {
         assertThat(persistedOrder.getCustomerComplaint()).isEqualTo(payload.customerComplaint());
         assertThat(persistedOrder.getOdometerReading()).isEqualTo(payload.odometerReading());
         assertThat(persistedOrder.getStatus()).isEqualTo(ServiceOrderStatusEnum.RECEIVED);
-        assertThat(persistedOrder.getTotalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(persistedOrder.getBudget()).isNotNull();
+        assertThat(persistedOrder.getBudget().getTotalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(persistedOrder.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.OPEN);
     }
 
     @Test
@@ -206,13 +209,15 @@ class ServiceOrderControllerIT {
                 .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data.externalId").value(savedOrder.getExternalId().toString()))
-                .andExpect(jsonPath("$.data.totalAmount").value(170.0))
-                .andExpect(jsonPath("$.data.licensePlate").value(vehicle.getLicensePlate()));
+                .andExpect(jsonPath("$.data.budget.totalAmount").value(170.0))
+                .andExpect(jsonPath("$.data.vehicle.licensePlate").value(vehicle.getLicensePlate()))
+                .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.DIAGNOSIS.name()));
 
         ServiceOrder updatedOrder = serviceOrderRepository.findByExternalId(savedOrder.getExternalId()).orElseThrow();
 
         assertThat(updatedOrder.getMechanicDiagnosis()).isEqualTo(payload.mechanicDiagnosis());
-        assertThat(updatedOrder.getTotalAmount()).isEqualByComparingTo("170.00");
+        assertThat(updatedOrder.getBudget().getTotalAmount()).isEqualByComparingTo("170.00");
+        assertThat(updatedOrder.getStatus()).isEqualTo(ServiceOrderStatusEnum.DIAGNOSIS);
         assertThat(updatedOrder.getStockItems()).hasSize(1);
         assertThat(updatedOrder.getLabors()).hasSize(1);
         assertThat(updatedOrder.getStockItems().getFirst().getStockItem().getExternalId()).isEqualTo(stockItem.getExternalId());
@@ -220,7 +225,7 @@ class ServiceOrderControllerIT {
     }
 
     @Test
-    void shouldUpdateStatusAndWithdrawStockUsingRealServiceAndRepository() throws Exception {
+    void shouldProcessApprovedBudgetAndWithdrawStockUsingRealServiceAndRepository() throws Exception {
         User owner = userRepository.save(buildUser(
                 "81731234060",
                 "Cliente Status",
@@ -238,6 +243,7 @@ class ServiceOrderControllerIT {
 
         ServiceOrder serviceOrder = buildServiceOrder(vehicle, mechanic, "Ruido no motor");
         serviceOrder.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+        serviceOrder.getBudget().setStatus(BudgetStatusEnum.SENT);
 
         ServiceOrderStockItem orderPart = new ServiceOrderStockItem();
         orderPart.setStockItem(stockItem);
@@ -246,26 +252,27 @@ class ServiceOrderControllerIT {
         orderPart.setUnitPrice(stockItem.getSalePrice());
         orderPart.setTotalPrice(new BigDecimal("160.00"));
         serviceOrder.addStockItem(orderPart);
-        serviceOrder.setTotalAmount(new BigDecimal("160.00"));
+        serviceOrder.getBudget().setTotalAmount(new BigDecimal("160.00"));
 
         ServiceOrder savedOrder = serviceOrderRepository.save(serviceOrder);
 
         mockMvc.perform(
-                        patch("/api/v1/service-orders/{id}/status", savedOrder.getExternalId())
+                        post("/api/v1/service-orders/{id}/budget-response", savedOrder.getExternalId())
                                 .with(AuthUtil.admin())
                                 .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(new ServiceOrderStatusUpdateDto(ServiceOrderStatusEnum.APPROVED)))
+                                .content(objectMapper.writeValueAsString(new BudgetResponseDto(true)))
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
-                .andExpect(jsonPath("$.message").value("success"))
-                .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.APPROVED.name()));
+                .andExpect(jsonPath("$.message").value("Budget approved successfully! Stock withdrawn and OS moved to IN_PROGRESS."))
+                .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.IN_PROGRESS.name()));
 
         ServiceOrder updatedOrder = serviceOrderRepository.findByExternalId(savedOrder.getExternalId()).orElseThrow();
         StockItem updatedItem = stockItemRepository.findByExternalId(stockItem.getExternalId()).orElseThrow();
 
-        assertThat(updatedOrder.getStatus()).isEqualTo(ServiceOrderStatusEnum.APPROVED);
+        assertThat(updatedOrder.getStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+        assertThat(updatedOrder.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.APPROVED);
         assertThat(updatedOrder.getApprovalDate()).isNotNull();
         assertThat(updatedItem.getQuantity()).isEqualTo(3);
         assertThat(updatedItem.getPendingDemand()).isZero();
@@ -327,13 +334,17 @@ class ServiceOrderControllerIT {
     }
 
     private ServiceOrder buildServiceOrder(Vehicle vehicle, User mechanic, String complaint) {
+        Budget budget = new Budget();
+        budget.setTotalAmount(BigDecimal.ZERO);
+        budget.setStatus(BudgetStatusEnum.OPEN);
+
         ServiceOrder order = new ServiceOrder();
         order.setVehicle(vehicle);
         order.setResponsibleMechanic(mechanic);
         order.setCustomerComplaint(complaint);
         order.setOdometerReading(45210);
         order.setStatus(ServiceOrderStatusEnum.RECEIVED);
-        order.setTotalAmount(BigDecimal.ZERO);
+        order.setBudget(budget);
         return order;
     }
 

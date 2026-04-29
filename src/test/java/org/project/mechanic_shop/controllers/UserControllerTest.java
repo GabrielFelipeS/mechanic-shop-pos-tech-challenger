@@ -185,6 +185,7 @@ class UserControllerTest {
                                     .param("document", user.getDocument())
                                     .param("name", user.getName())
                                     .param("email", user.getEmail())
+                                    .param("role", user.getRole())
                                     .param("page", "0")
                                     .param("size", "10")
                                     .param("sort", "name,asc")

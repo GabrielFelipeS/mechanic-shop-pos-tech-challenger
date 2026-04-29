@@ -10,22 +10,18 @@ import org.project.mechanic_shop.config.SecurityConfig;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStatusUpdateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
+import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetResponseDto;
 import org.project.mechanic_shop.mappers.ServiceOrderMapperImpl;
 import org.project.mechanic_shop.mappers.UserMapperImpl;
 import org.project.mechanic_shop.mappers.VehicleMapperImpl;
-import org.project.mechanic_shop.models.MechanicService;
-import org.project.mechanic_shop.models.ServiceOrder;
-import org.project.mechanic_shop.models.ServiceOrderLabor;
-import org.project.mechanic_shop.models.ServiceOrderStockItem;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.Vehicle;
+import org.project.mechanic_shop.models.*;
+import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
 import org.project.mechanic_shop.models.enums.UserRoleEnum;
 import org.project.mechanic_shop.services.ServiceOrderService;
+import org.project.mechanic_shop.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -46,10 +42,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,6 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ServiceOrderMapperImpl.class,
         VehicleMapperImpl.class,
         UserMapperImpl.class,
+        ServiceOrderMapperImpl.class,
         ObjectMapperConfig.class
 })
 class ServiceOrderControllerTest {
@@ -74,6 +71,9 @@ class ServiceOrderControllerTest {
 
     @MockitoBean
     private ServiceOrderService service;
+
+    @MockitoBean
+    private UserService userService;
 
     @Nested
     class FindById {
@@ -157,8 +157,9 @@ class ServiceOrderControllerTest {
                     .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                     .andExpect(jsonPath("$.message").value("success"))
                     .andExpect(jsonPath("$.data.externalId").value(serviceOrder.getExternalId().toString()))
-                    .andExpect(jsonPath("$.data.totalAmount").value(170.0))
-                    .andExpect(jsonPath("$.data.licensePlate").value(serviceOrder.getVehicle().getLicensePlate()));
+                    .andExpect(jsonPath("$.data.budget.totalAmount").value(170.0))
+                    .andExpect(jsonPath("$.data.vehicle.licensePlate").value(serviceOrder.getVehicle().getLicensePlate()))
+                    .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.DIAGNOSIS.name()));
         }
 
         @Test
@@ -177,23 +178,45 @@ class ServiceOrderControllerTest {
     }
 
     @Nested
-    class UpdateStatus {
+    class RequestApproval {
         @Test
-        void shouldUpdateStatus() throws Exception {
+        void shouldRequestApproval() throws Exception {
             var externalId = UUID.randomUUID();
             var serviceOrder = buildServiceOrder();
-            serviceOrder.setStatus(ServiceOrderStatusEnum.APPROVED);
-            var dto = new ServiceOrderStatusUpdateDto(ServiceOrderStatusEnum.APPROVED);
+            serviceOrder.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            serviceOrder.getBudget().setStatus(BudgetStatusEnum.SENT);
 
-            when(service.updateStatus(externalId, dto.status())).thenReturn(serviceOrder);
+            when(service.requestCustomerApproval(externalId)).thenReturn(serviceOrder);
 
-            mockMvc.perform(patch("/api/v1/service-orders/{id}/status", externalId)
+            mockMvc.perform(post("/api/v1/service-orders/{id}/request-approval", externalId)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+                    .andExpect(jsonPath("$.message").value("Approval requested successfully. Status updated to PENDING_APPROVAL."))
+                    .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.PENDING_APPROVAL.name()));
+        }
+    }
+
+    @Nested
+    class BudgetResponse {
+        @Test
+        void shouldProcessApprovedBudgetResponse() throws Exception {
+            var externalId = UUID.randomUUID();
+            var serviceOrder = buildServiceOrder();
+            serviceOrder.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+            serviceOrder.getBudget().setStatus(BudgetStatusEnum.APPROVED);
+            var dto = new BudgetResponseDto(true);
+
+            when(service.processBudgetResponse(externalId, true)).thenReturn(serviceOrder);
+
+            mockMvc.perform(post("/api/v1/service-orders/{id}/budget-response", externalId)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
-                    .andExpect(jsonPath("$.message").value("success"))
-                    .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.APPROVED.name()));
+                    .andExpect(jsonPath("$.message").value("Budget approved successfully! Stock withdrawn and OS moved to IN_PROGRESS."))
+                    .andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.IN_PROGRESS.name()))
+                    .andExpect(jsonPath("$.data.budget.status").value(BudgetStatusEnum.APPROVED.name()));
         }
     }
 
@@ -208,7 +231,8 @@ class ServiceOrderControllerTest {
             when(service.search(
                     eq(serviceOrder.getVehicle().getLicensePlate()),
                     eq(serviceOrder.getStatus()),
-                    any(Pageable.class)
+                    any(Pageable.class),
+                    isNull()
             )).thenReturn(page);
 
             mockMvc.perform(get("/api/v1/service-orders/search")
@@ -226,7 +250,8 @@ class ServiceOrderControllerTest {
             verify(service).search(
                     eq(serviceOrder.getVehicle().getLicensePlate()),
                     eq(serviceOrder.getStatus()),
-                    captor.capture()
+                    captor.capture(),
+                    isNull()
             );
 
             Pageable pageable = captor.getValue();
@@ -242,7 +267,7 @@ class ServiceOrderControllerTest {
             ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
             Page<ServiceOrder> page = new PageImpl<>(List.of(serviceOrder), PageRequest.of(0, 2), 1);
 
-            when(service.search(eq(serviceOrder.getVehicle().getLicensePlate()), any(), any(Pageable.class)))
+            when(service.search(eq(serviceOrder.getVehicle().getLicensePlate()), any(), any(Pageable.class), isNull()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/service-orders/search")
@@ -252,7 +277,7 @@ class ServiceOrderControllerTest {
                     .andExpect(jsonPath("$.message").value("success"))
                     .andExpect(jsonPath("$.data.content[0].licensePlate").value(serviceOrder.getVehicle().getLicensePlate()));
 
-            verify(service).search(eq(serviceOrder.getVehicle().getLicensePlate()), eq(null), captor.capture());
+            verify(service).search(eq(serviceOrder.getVehicle().getLicensePlate()), eq(null), captor.capture(), isNull());
 
             Pageable pageable = captor.getValue();
             assertThat(pageable.getPageNumber()).isZero();
@@ -311,6 +336,11 @@ class ServiceOrderControllerTest {
         mechanicService.setEstimatedTimeMinutes(60);
         mechanicService.setPrice(new BigDecimal("150.00"));
 
+        Budget budget = new Budget();
+        budget.setExternalId(UUID.randomUUID());
+        budget.setStatus(BudgetStatusEnum.SENT);
+        budget.setTotalAmount(new BigDecimal("170.00"));
+
         ServiceOrder order = new ServiceOrder();
         order.setId(1L);
         order.setExternalId(UUID.randomUUID());
@@ -320,7 +350,7 @@ class ServiceOrderControllerTest {
         order.setResponsibleMechanic(mechanic);
         order.setMechanicDiagnosis("Trocar filtro e oleo");
         order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
-        order.setTotalAmount(new BigDecimal("170.00"));
+        order.setBudget(budget);
 
         ServiceOrderStockItem orderPart = new ServiceOrderStockItem();
         orderPart.setId(1L);

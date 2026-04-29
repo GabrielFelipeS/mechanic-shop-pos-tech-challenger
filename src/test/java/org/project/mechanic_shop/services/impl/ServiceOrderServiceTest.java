@@ -14,12 +14,14 @@ import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
 import org.project.mechanic_shop.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
+import org.project.mechanic_shop.models.Budget;
 import org.project.mechanic_shop.models.ServiceOrder;
 import org.project.mechanic_shop.models.ServiceOrderLabor;
 import org.project.mechanic_shop.models.ServiceOrderStockItem;
 import org.project.mechanic_shop.models.StockItem;
 import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.models.Vehicle;
+import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
 import org.project.mechanic_shop.repositories.ServiceOrderRepository;
@@ -102,7 +104,9 @@ class ServiceOrderServiceTest {
             assertThat(created.getCustomerComplaint()).isEqualTo("Barulho no freio");
             assertThat(created.getOdometerReading()).isEqualTo(125000);
             assertThat(created.getStatus()).isEqualTo(ServiceOrderStatusEnum.RECEIVED);
-            assertThat(created.getTotalAmount()).isEqualByComparingTo("0");
+            assertThat(created.getBudget()).isNotNull();
+            assertThat(created.getBudget().getTotalAmount()).isEqualByComparingTo("0");
+            assertThat(created.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.OPEN);
             assertThat(created.getResponsibleMechanic()).isNull();
 
             verify(eventPublisher, never()).publishEvent(any(NewServiceOrderEvent.class));
@@ -160,9 +164,11 @@ class ServiceOrderServiceTest {
             var updated = service.updateQuote(externalId, dto);
 
             assertThat(updated.getMechanicDiagnosis()).isEqualTo("Troca de componentes");
+            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.DIAGNOSIS);
             assertThat(updated.getLabors()).hasSize(1);
             assertThat(updated.getStockItems()).hasSize(1);
-            assertThat(updated.getTotalAmount()).isEqualByComparingTo("530.00");
+            assertThat(updated.getBudget().getTotalAmount()).isEqualByComparingTo("530.00");
+            assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.OPEN);
 
             ServiceOrderLabor labor = updated.getLabors().getFirst();
             assertThat(labor.getMechanicService()).isSameAs(mechanicService);
@@ -184,26 +190,59 @@ class ServiceOrderServiceTest {
         void shouldRejectQuoteUpdateForFinalStatuses() {
             UUID externalId = UUID.randomUUID();
             var order = serviceOrder();
-            order.setStatus(ServiceOrderStatusEnum.APPROVED);
-            var serviceOrderQutodeDto = new ServiceOrderQuoteDto("Diag", List.of(), List.of());
+            order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            order.getBudget().setStatus(BudgetStatusEnum.SENT);
+            var serviceOrderQuoteDto = new ServiceOrderQuoteDto("Diag", List.of(), List.of());
 
             when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
 
-            assertThatThrownBy(() -> service.updateQuote(externalId,serviceOrderQutodeDto))
+            assertThatThrownBy(() -> service.updateQuote(externalId, serviceOrderQuoteDto))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("Cannot update items for an Order that is already APPROVED");
+                    .hasMessage("Cannot update items for an Order that is already PENDING_APPROVAL & SENT");
 
             verify(repository, never()).save(any(ServiceOrder.class));
         }
     }
 
     @Nested
-    class UpdateStatus {
+    class RequestCustomerApproval {
         @Test
-        void shouldApproveOrderWithdrawStockAndPublishEvent() {
+        void shouldRequestCustomerApproval() {
             UUID externalId = UUID.randomUUID();
             var order = serviceOrder();
-            order.setStatus(ServiceOrderStatusEnum.RECEIVED);
+            order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
+            order.addLabor(serviceOrderLabor(MechanicServiceHelper.generateMechanicService(), 2));
+            ArgumentCaptor<ServiceOrderStatusChangedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(ServiceOrderStatusChangedEvent.class);
+
+            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+            when(repository.save(order)).thenReturn(order);
+
+            var updated = service.requestCustomerApproval(externalId);
+
+            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.SENT);
+            assertThat(updated.getEstimatedCompletionDate()).isNotNull();
+            assertThat(updated.getEstimatedCompletionDays()).isEqualTo(1);
+            assertThat(updated.getApprovalDate()).isNotNull();
+
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+            var event = eventCaptor.getValue();
+            assertThat(event.serviceOrderExternalId()).isEqualTo(updated.getExternalId());
+            assertThat(event.oldStatus()).isEqualTo(ServiceOrderStatusEnum.DIAGNOSIS);
+            assertThat(event.newStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
+        }
+    }
+
+    @Nested
+    class ProcessBudgetResponse {
+        @Test
+        void shouldApproveBudgetWithdrawStockAndMoveToInProgress() {
+            UUID externalId = UUID.randomUUID();
+            var order = serviceOrder();
+            order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            order.getBudget().setStatus(BudgetStatusEnum.SENT);
             order.addStockItem(serviceOrderStockItem(stockItem(), 2, new BigDecimal("20.00")));
             order.addStockItem(serviceOrderStockItem(stockItem(), 1, new BigDecimal("15.00")));
             ArgumentCaptor<ServiceOrderStatusChangedEvent> eventCaptor =
@@ -212,9 +251,10 @@ class ServiceOrderServiceTest {
             when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
             when(repository.save(order)).thenReturn(order);
 
-            var updated = service.updateStatus(externalId, ServiceOrderStatusEnum.APPROVED);
+            var updated = service.processBudgetResponse(externalId, true);
 
-            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.APPROVED);
+            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+            assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.APPROVED);
             assertThat(updated.getApprovalDate()).isNotNull();
 
             verify(stockItemService).withdrawStock(order.getStockItems().get(0).getStockItem().getExternalId(), 2);
@@ -222,24 +262,67 @@ class ServiceOrderServiceTest {
             verify(eventPublisher).publishEvent(eventCaptor.capture());
 
             var event = eventCaptor.getValue();
-            assertThat(event.serviceOrder()).isSameAs(updated);
-            assertThat(event.oldStatus()).isEqualTo(ServiceOrderStatusEnum.RECEIVED);
-            assertThat(event.newStatus()).isEqualTo(ServiceOrderStatusEnum.APPROVED);
+            assertThat(event.serviceOrderExternalId()).isEqualTo(updated.getExternalId());
+            assertThat(event.oldStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            assertThat(event.newStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
         }
 
         @Test
-        void shouldSetCompletionDateWhenCompletingOrder() {
+        void shouldRejectBudgetAndCancelServiceOrder() {
             UUID externalId = UUID.randomUUID();
             var order = serviceOrder();
-            order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+            order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+            order.getBudget().setStatus(BudgetStatusEnum.SENT);
 
             when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
             when(repository.save(order)).thenReturn(order);
 
-            var updated = service.updateStatus(externalId, ServiceOrderStatusEnum.COMPLETED);
+            var updated = service.processBudgetResponse(externalId, false);
+
+            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.CANCELED);
+            assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.REJECTED);
+        }
+    }
+
+    @Nested
+    class FinishService {
+        @Test
+        void shouldSetActualCompletionDateWhenFinishingService() {
+            UUID externalId = UUID.randomUUID();
+            var order = serviceOrder();
+            order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+            order.setApprovalDate(order.getCreatedAt());
+            ArgumentCaptor<ServiceOrderStatusChangedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(ServiceOrderStatusChangedEvent.class);
+
+            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+            when(repository.save(order)).thenReturn(order);
+
+            var updated = service.finishService(externalId);
 
             assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.COMPLETED);
-            assertThat(updated.getCompletionDate()).isNotNull();
+            assertThat(updated.getActualCompletionDate()).isNotNull();
+            assertThat(updated.getActualCompletionDays()).isNotNull();
+
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().newStatus()).isEqualTo(ServiceOrderStatusEnum.COMPLETED);
+        }
+    }
+
+    @Nested
+    class DeliverVehicle {
+        @Test
+        void shouldDeliverVehicleWhenServiceOrderIsCompleted() {
+            UUID externalId = UUID.randomUUID();
+            var order = serviceOrder();
+            order.setStatus(ServiceOrderStatusEnum.COMPLETED);
+
+            when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+            when(repository.save(order)).thenReturn(order);
+
+            var updated = service.deliverVehicle(externalId);
+
+            assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.DELIVERED);
         }
     }
 
@@ -286,13 +369,14 @@ class ServiceOrderServiceTest {
         @Test
         void shouldReturnServiceOrdersWhenSearchCriteriaIsProvided() {
             var order = serviceOrder();
+            var user = UserHelper.generateUser();
             Pageable pageable = PageRequest.of(0, 10);
             Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(order));
             ArgumentCaptor<Example<ServiceOrder>> captor = exampleCaptor();
 
             when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
 
-            var result = service.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, pageable);
+            var result = service.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, pageable, user);
 
             assertThat(result).isEqualTo(expectedPage);
 
@@ -312,7 +396,8 @@ class ServiceOrderServiceTest {
         order.setCustomerComplaint("Ruido");
         order.setOdometerReading(100000);
         order.setStatus(ServiceOrderStatusEnum.RECEIVED);
-        order.setTotalAmount(BigDecimal.ZERO);
+        order.setCreatedAt(java.time.LocalDateTime.now().minusDays(1));
+        order.setBudget(budget());
         return order;
     }
 
@@ -357,5 +442,22 @@ class ServiceOrderServiceTest {
         orderItem.setUnitPrice(totalPrice);
         orderItem.setTotalPrice(totalPrice);
         return orderItem;
+    }
+
+    private ServiceOrderLabor serviceOrderLabor(org.project.mechanic_shop.models.MechanicService mechanicService, int quantity) {
+        var labor = new ServiceOrderLabor();
+        labor.setMechanicService(mechanicService);
+        labor.setQuantity(quantity);
+        labor.setUnitPrice(mechanicService.getPrice());
+        labor.setTotalPrice(mechanicService.getPrice().multiply(BigDecimal.valueOf(quantity)));
+        return labor;
+    }
+
+    private Budget budget() {
+        var budget = new Budget();
+        budget.setExternalId(UUID.randomUUID());
+        budget.setTotalAmount(BigDecimal.ZERO);
+        budget.setStatus(BudgetStatusEnum.OPEN);
+        return budget;
     }
 }
