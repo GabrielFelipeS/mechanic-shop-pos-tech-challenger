@@ -98,7 +98,6 @@ public class VehicleController {
 
         log.info("Search vehicles with filters");
 
-        // Passando o ownerId para o service
         Page<Vehicle> vehicles = service.search(licensePlate, brand, model, ownerId, pageable);
 
         var listDto = vehicles.map(mapper::toShortDto);
