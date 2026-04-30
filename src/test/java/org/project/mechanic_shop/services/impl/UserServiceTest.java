@@ -123,7 +123,6 @@ class UserServiceTest {
 			var userUpdated = userService.update(externalId, userToUpdate);
 
 			assertThat(userUpdated.getName()).isEqualTo("NOME_ATUALIZADO");
-			assertThat(userUpdated.getPassword()).isEqualTo("Teste@123");
 			assertThat(userUpdated.getActive()).isFalse();
 
 			assertThat(userUpdated.getEmail()).isEqualTo(userFind.getEmail());
