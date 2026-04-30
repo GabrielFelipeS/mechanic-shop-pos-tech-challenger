@@ -28,10 +28,10 @@ Para rodar e testar este projeto localmente, você precisará de:
 | :--- | :--- | :--- |
 | **ADMIN** | `admin@shop.com` | Acesso total a todas as rotas do sistema. |
 | **RECEPTIONIST** | `receptionist@shop.com` | Gerencia clientes, veículos, cria e entrega Ordens de Serviço. |
-| **MECHANIC** | `mechanic@shop.com` | Cria orçamentos, finaliza serviços e busca catálogo. |
+| **MECHANIC** | `mechanic@shop.com` | Atualiza ordens de Serviço, finaliza serviços e busca catálogo, visualiza ordens de serviço. |
 | **WAREHOUSE_CLERK** | `warehouse@shop.com` | Gerencia (cria/edita) o estoque de peças. |
-| **SALESPERSON** | `salesperson@shop.com` | Visualiza Ordens de Serviço. |
-| **BUYER** | `compras@shop.com` | Usuário de compras do sistema. |
+| **BUYER** | `buyer@shop.com` | Usuário de compras do sistema. |
+| **CUSTOMER** | `emailquearecepcaoselecionar@shop.com` | Visualiza Ordens de Serviço, aprova/reprova orçamento, vê registro do veículo. *(**Essa Role não é criada como um usuário padrão a recepção é quem precisa criar o usuário com essa role específica**)|
 
 ---
 
@@ -52,7 +52,7 @@ Abaixo está o mapeamento de quais perfis podem acessar cada rota da API. Lembre
 ### 3. Gestão de Veículos (`/api/vehicles`)
 * `POST /create`: `RECEPTIONIST`
 * `PUT /{id}`: `RECEPTIONIST`
-* `GET /{id}` e `/search`: `RECEPTIONIST`, `MECHANIC`
+* `GET /{id}` e `/search`: `RECEPTIONIST`, `MECHANIC`,`CUSTOMER`
 
 ### 4. Catálogo de Serviços (`/api/mechanic-services`)
 * `POST /create`: (Somente `ADMIN`)
