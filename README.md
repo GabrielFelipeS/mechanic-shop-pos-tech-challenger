@@ -25,7 +25,7 @@ A aplicação foi construída utilizando as seguintes tecnologias e ferramentas:
 Para rodar e testar este projeto localmente, você precisará de:
 * **[Docker](https://www.docker.com/) e Docker Compose** instalados na máquina.
 * **Gerador de Documentos:** O sistema possui validação real. Ao criar novos usuários ou clientes, utilize um gerador válido de CPF/CNPJ (recomendamos o site [4Devs](https://www.4devs.com.br/gerador_de_cpf)).
-* Conta no **[Mailtrap](https://mailtrap.io/)** (para capturar os e-mails de teste assíncronos do sistema), e incluir essas credenciais no arquivo `.env` já disponibilizado no repositório, ou se preferir utilizar o que podem verificar os logs de envio de e-mail, que já utiliza credenciais do grupo para utilização do Mailtrap.
+* **Servidor de E-mails Local (Mailpit):** Não é necessário criar contas em serviços externos para testar o disparo de e-mails assíncronos. O projeto utiliza o Mailpit embarcado no Docker para interceptar e exibir todos os e-mails localmente, garantindo testes rápidos e sem bloqueios de rede.
 
 ---
 
@@ -95,6 +95,13 @@ O ciclo de vida da OS é protegido rigorosamente por perfil funcional:
 A API possui documentação viva detalhando todos os Schemas, DTOs e Endpoints. Após subir os containers via Docker, acesse diretamente no navegador:
 
 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
+
+## ✉️ Caixa de E-mails de Teste (Mailpit)
+
+Todos os e-mails disparados de forma assíncrona pela aplicação (notificações de Ordem de Serviço, aprovações de orçamento, alertas de estoque zerado) são interceptados e podem ser visualizados em tempo real através da interface web do Mailpit.
+
+Após subir os containers, acesse a caixa de entrada em:
+**[http://localhost:8025](http://localhost:8025)**
 
 
 ## 📦 Referência de Payloads (JSON) para Testes
