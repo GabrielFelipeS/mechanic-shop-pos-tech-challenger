@@ -38,7 +38,7 @@ public class ServiceOrderController {
 	private final UserService userService;
 
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON', 'CUSTOMER')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
 		log.info("Find service order by External ID: {}", id);
 

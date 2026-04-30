@@ -30,11 +30,6 @@ app:
       email: ''
       document: ''
       role: ''
-    salesperson:
-      name: ''
-      email: ''
-      document: ''
-      role: ''
     admin:
       name: ''
       email: ''

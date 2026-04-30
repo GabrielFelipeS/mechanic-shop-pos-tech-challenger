@@ -61,11 +61,6 @@ app:
       email: ${SEED_MC_EMAIL:''}
       document: ${SEED_MC_DOC:''}
       role: ${SEED_MC_ROLE:''}
-    salesperson:
-      name: ${SEED_SL_NAME:''}
-      email: ${SEED_SL_EMAIL:''}
-      document: ${SEED_SL_DOC:''}
-      role: ${SEED_SL_ROLE:''}
     admin:
       name: ${SEED_AD_NAME:''}
       email: ${SEED_AD_EMAIL:''}

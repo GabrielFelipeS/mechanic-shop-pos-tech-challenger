@@ -58,18 +58,6 @@ public class SystemBootstrapper {
 	@Value("${app.seed.mechanic.role}")
 	private String mcRole;
 
-	@Value("${app.seed.salesperson.name}")
-	private String slName;
-
-	@Value("${app.seed.salesperson.email}")
-	private String slEmail;
-
-	@Value("${app.seed.salesperson.document}")
-	private String slDoc;
-
-	@Value("${app.seed.salesperson.role}")
-	private String slRole;
-
 	@Value("${app.seed.admin.name}")
 	private String adName;
 
@@ -104,7 +92,6 @@ public class SystemBootstrapper {
 			{ whRole, whEmail, whDoc, whName },
 			{ rcRole, rcEmail, rcDoc, rcName },
 			{ mcRole, mcEmail, mcDoc, mcName },
-			{ slRole, slEmail, slDoc, slName },
 			{ byRole, byEmail, byDoc, byName },
 		};
 

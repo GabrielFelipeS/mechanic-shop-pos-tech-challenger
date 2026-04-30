@@ -12,8 +12,6 @@ public enum UserRoleEnum {
 
 	MECHANIC("Mechanic", "Performs vehicle maintenance, inspections, and repairs."),
 
-	SALESPERSON("Salesperson", "Responsible for selling services, parts, and interacting with clients."),
-
 	CUSTOMER("Customer", "Client of the mechanic shop."),
 
 	ADMIN("Admin", "System administrator with full access to all modules."),
