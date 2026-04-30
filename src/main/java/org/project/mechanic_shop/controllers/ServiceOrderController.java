@@ -38,7 +38,7 @@ public class ServiceOrderController {
 	private final UserService userService;
 
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
 		log.info("Find service order by External ID: {}", id);
 
@@ -144,7 +144,7 @@ public class ServiceOrderController {
 	}
 
 	@GetMapping("/search")
-	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> search(
 		@RequestParam(name = "licensePlate", required = false) String licensePlate,
 		@RequestParam(name = "status", required = false) ServiceOrderStatusEnum status,

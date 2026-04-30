@@ -23,6 +23,7 @@ import org.project.mechanic_shop.services.UserService;
 import org.project.mechanic_shop.utils.UserHelper;
 import org.project.mechanic_shop.validators.UserValidator;
 import org.springframework.data.domain.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -35,9 +36,12 @@ class UserServiceTest {
 	@Mock
 	private UserValidator userValidator;
 
+	@Mock
+	PasswordEncoder passwordEncoder;
+
 	@BeforeEach
 	void setup() {
-		userService = new UserServiceImpl(userRepository, userValidator);
+		userService = new UserServiceImpl(userRepository, userValidator, passwordEncoder);
 	}
 
 	@Nested

@@ -46,7 +46,7 @@ public class ServiceOrderNotificationListener {
 			case PENDING_APPROVAL -> sendEmail(
 				customerEmail,
 				"Action Required: Quote Pending Approval",
-				"The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs."
+				"The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs. " +"This Os code: " + order.getId()
 			);
 			case IN_PROGRESS -> sendEmail(
 				mechanicEmail,
