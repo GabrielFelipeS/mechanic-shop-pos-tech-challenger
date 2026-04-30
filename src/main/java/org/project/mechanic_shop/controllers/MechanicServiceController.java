@@ -45,7 +45,7 @@ public class MechanicServiceController {
 	}
 
 	@PostMapping("/create")
-	@PreAuthorize("hasAnyRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid MechanicServiceManDto dto) {
 		log.info("Try create mechanic service with parameters: {}", dto);
 
@@ -59,7 +59,7 @@ public class MechanicServiceController {
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid MechanicServiceManDto dto) {
 		log.info("Try update mechanic service {} with parameters: {}", id, dto);
 

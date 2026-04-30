@@ -45,7 +45,7 @@ public class StockItemController {
 	}
 
 	@PostMapping("/create")
-	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN')")
+	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid StockItemManDto dto) {
 		log.info("Try create part with parameters: {}", dto);
 
