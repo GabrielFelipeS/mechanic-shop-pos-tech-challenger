@@ -2,6 +2,7 @@ package org.project.mechanic_shop.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.mechanic_shop.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.models.ServiceOrder;
 import org.project.mechanic_shop.models.User;
@@ -37,9 +38,7 @@ public class ServiceOrderNotificationListener {
 		log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
 
 		switch (event.newStatus()) {
-			case RECEIVED -> sendEmail(mechanicEmail,
-					"New Service Order Assigned",
-					"A new service order (OS #" + order.getId() + ") has been assigned to you. Please review the details and prepare for the diagnosis.");
+			case RECEIVED -> log.info("Service Order #{} received. Awaiting diagnosis.", order.getId());
 			case DIAGNOSIS -> sendEmail(
 				customerEmail,
 				"Service Update: Diagnosis Started",
@@ -81,6 +80,23 @@ public class ServiceOrderNotificationListener {
 				"Thank you for choosing Mechanic Shop!",
 				"Your vehicle has been successfully delivered. We appreciate your business and hope to see you for your next revision!"
 			);
+		}
+	}
+
+	@Async
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	public void handleNewOrderEvent(NewServiceOrderEvent event) {
+
+		ServiceOrder order = event.serviceOrder();
+		User mechanic = order.getResponsibleMechanic();
+
+		if (mechanic != null && mechanic.getEmail() != null) {
+			log.info("Triggering notifications for NEW Service Order. Assignee: {}", mechanic.getEmail());
+
+			sendEmail(mechanic.getEmail(),
+					"New Service Order Assigned",
+					"A new service order (OS #" + order.getId() + ") has been assigned to you. Please review the details and prepare for the diagnosis.");
 		}
 	}
 
