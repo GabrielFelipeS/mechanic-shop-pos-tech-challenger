@@ -11,7 +11,7 @@ Este projeto foi desenvolvido com foco em regras de negócio, utilizando **Geren
 Para rodar e testar este projeto localmente, você precisará de:
 * **[Docker](https://www.docker.com/) e Docker Compose** instalados na máquina.
 * **Gerador de Documentos:** O sistema possui validação real. Ao criar novos usuários ou clientes, utilize um gerador válido de CPF/CNPJ (recomendamos o site [4Devs](https://www.4devs.com.br/gerador_de_cpf)).
-* Conta no **[Mailtrap](https://mailtrap.io/)** (para capturar os e-mails de teste assíncronos do sistema), e incluir essas credenciais no arquivo `.env` já disponibilizado no repositório.
+* Conta no **[Mailtrap](https://mailtrap.io/)** (para capturar os e-mails de teste assíncronos do sistema), e incluir essas credenciais no arquivo `.env` já disponibilizado no repositório, ou se preferir utilizar o que podem verificar os logs de envio de e-mail, que já utiliza credenciais do grupo para utilização do Mailtrap.
 
 ---
 
@@ -72,7 +72,7 @@ O ciclo de vida da OS é protegido rigorosamente por perfil funcional:
 * **Aprovar Orçamento** (`POST /{id}/budget-response`): `CUSTOMER` (Cliente)
 * **Finalizar Serviço** (`POST /{id}/finish`): `MECHANIC`
 * **Entregar Veículo** (`POST /{id}/deliver`): `RECEPTIONIST`
-* **Visualizar OS** (`GET /{id}` e `/search`): `RECEPTIONIST`, `MECHANIC`, `SALESPERSON`
+* **Visualizar OS** (`GET /{id}` e `/search`): `RECEPTIONIST`, `MECHANIC`, `SALESPERSON`, `CUSTOMER`
 
 ---
 
