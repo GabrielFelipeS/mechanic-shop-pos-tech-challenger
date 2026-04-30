@@ -95,7 +95,7 @@ public class ServiceOrderNotificationListener {
 
 			sendEmail(mechanic.getEmail(),
 					"Nova Ordem de Serviço Atribuída",
-					"Uma nova ordem de serviço (OS #" + order.getId() + ") foi designada a você. Por favor, revise os detalhes do veículo e prepare-se para o diagnóstico.");
+					"Uma nova ordem de serviço (OS #" + order.getExternalId() + ") foi designada a você. Por favor, revise os detalhes do veículo e prepare-se para o diagnóstico.");
 		}
 	}
 

@@ -348,11 +348,11 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			.sum();
 
 		boolean isPartMissing = order
-			.getStockItems()
-			.stream()
-			.anyMatch(item -> item.getStockItem().getQuantity() < 0);
+				.getStockItems()
+				.stream()
+				.anyMatch(item -> item.getQuantity() > item.getStockItem().getQuantity());
 
-		int baseDays = (int) Math.ceil(totalServiceMinutes / 1440.0);
+		int baseDays = (int) Math.ceil(totalServiceMinutes / 480.0);
 		int totalEstimatedDays = baseDays + (isPartMissing ? 3 : 0);
 
 		order.setEstimatedCompletionDays(totalEstimatedDays);
