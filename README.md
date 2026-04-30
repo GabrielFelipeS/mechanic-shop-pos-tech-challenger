@@ -69,13 +69,13 @@ Abaixo está o mapeamento de quais perfis podem acessar cada rota da API. Lembre
 * `GET /{id}` e `/search`: `RECEPTIONIST`, `MECHANIC`,`CUSTOMER`
 
 ### 4. Catálogo de Serviços (`/api/mechanic-services`)
-* `POST /create`: (Somente `ADMIN`)
-* `PUT /{id}`: (Somente `ADMIN`)
+* `POST /create`: `ADMIN`, `MECHANIC`
+* `PUT /{id}`: `ADMIN`, `MECHANIC`
 * `GET /{id}` e `/search`: `RECEPTIONIST`, `MECHANIC`
 
 ### 5. Controle de Estoque (`/api/stock-items`)
-* `POST /create`: `WAREHOUSE_CLERK`
-* `PUT /{id}`: `WAREHOUSE_CLERK`
+* `POST /create`: `WAREHOUSE_CLERK`, `MECHANIC`
+* `PUT /{id}`: `WAREHOUSE_CLERK`, `MECHANIC`
 * `GET /{id}` e `/search`: `WAREHOUSE_CLERK`, `RECEPTIONIST`, `MECHANIC`
 
 ### 6. Ordem de Serviço (Máquina de Estados) (`/api/v1/service-orders`)
