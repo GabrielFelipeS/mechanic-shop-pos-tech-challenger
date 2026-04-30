@@ -28,9 +28,9 @@ public class StockNotificationListener {
 
 		log.warn("[EVENT RECEIVED] Alert processing for item: {}", item.getCode());
 
-		String subject = "URGENT: Restock Required - " + item.getCode();
+		String subject = "URGENTE: Reposição de Estoque Necessária -" + item.getCode();
 		String body = String.format(
-			"O item '%s' (%s) atingiu saldo zero. Precisamos de pelo menos %d unidade(s).",
+				"Atenção equipe! O item '%s' (%s) atingiu saldo zero no sistema."+"\n" +"Precisamos de pelo menos %d unidade(s) para atender as ordens de serviço pendentes. Por favor, providenciem a compra/reposição imediatamente.",
 			item.getName(),
 			item.getType(),
 			missingQuantity

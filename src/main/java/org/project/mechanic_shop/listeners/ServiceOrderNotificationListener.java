@@ -8,7 +8,6 @@ import org.project.mechanic_shop.models.ServiceOrder;
 import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.services.EmailService;
 import org.project.mechanic_shop.services.ServiceOrderService;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -38,47 +37,47 @@ public class ServiceOrderNotificationListener {
 		log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
 
 		switch (event.newStatus()) {
-			case RECEIVED -> log.info("Service Order #{} received. Awaiting diagnosis.", order.getId());
+			case RECEIVED -> log.info("Service Order '{}' received. Awaiting diagnosis.", order.getExternalId());
 			case DIAGNOSIS -> sendEmail(
-				customerEmail,
-				"Service Update: Diagnosis Started",
-				"Your vehicle is now being evaluated by our mechanics. We will send you the full quote soon."
+					customerEmail,
+					"Atualização do Serviço: Diagnóstico Iniciado",
+					"Seu veículo já está sendo avaliado por nossos mecânicos. Enviaremos o orçamento completo em breve."
 			);
 			case PENDING_APPROVAL -> sendEmail(
-				customerEmail,
-				"Action Required: Quote Pending Approval",
-				"The diagnosis is complete! Please review and approve the quote in our system so we can start the repairs. " +"This Os code: " + order.getId()
+					customerEmail,
+					"Ação Necessária: Orçamento Pendente de Aprovação",
+					"O diagnóstico está concluído! Por favor, acesse nosso sistema, revise e aprove o orçamento para que possamos iniciar os reparos. Código da OS: " + order.getExternalId()
 			);
 			case IN_PROGRESS -> sendEmail(
-				mechanicEmail,
-				"Task Approved: Start Repairs",
-				"The customer has approved the quote for OS #" +
-					order.getId() +
-					". You can now proceed with the service."
+					mechanicEmail,
+					"Tarefa Aprovada: Iniciar Reparos",
+					"O cliente aprovou o orçamento da OS #" +
+							order.getExternalId() +
+							". Você já pode prosseguir com o serviço no veículo."
 			);
 			case CANCELED -> {
 				sendEmail(
-					customerEmail,
-					"Service Cancelled",
-					"As requested, the service order has been closed. Please arrange to pick up your vehicle at your earliest convenience."
+						customerEmail,
+						"Serviço Cancelado",
+						"Conforme solicitado, a ordem de serviço com o código '" + order.getExternalId() + "' foi encerrada. Por favor, providencie a retirada do seu veículo assim que possível."
 				);
 				sendEmail(
-					mechanicEmail,
-					"Service Cancelled by Customer",
-					"The quote for OS #" +
-						order.getId() +
-						" was rejected. The service is finalized and no further action is required."
+						mechanicEmail,
+						"Serviço Cancelado pelo Cliente",
+						"O orçamento da OS #" +
+								order.getExternalId() +
+								" foi rejeitado. O serviço foi finalizado e nenhuma ação adicional é necessária de sua parte."
 				);
 			}
 			case COMPLETED -> sendEmail(
-				customerEmail,
-				"Service Completed! Your car is ready",
-				"Great news! The maintenance of your vehicle is finished. You can come by to pick it up."
+					customerEmail,
+					"Serviço Concluído! Seu carro está pronto: " + order.getExternalId(),
+					"Ótimas notícias! A manutenção do seu veículo foi finalizada. Você já pode vir retirá-lo em nossa oficina."
 			);
 			case DELIVERED -> sendEmail(
-				customerEmail,
-				"Thank you for choosing Mechanic Shop!",
-				"Your vehicle has been successfully delivered. We appreciate your business and hope to see you for your next revision!"
+					customerEmail,
+					"Obrigado por escolher a Mechanic Shop! Código: " + order.getExternalId(),
+					"Seu veículo foi entregue com sucesso. Agradecemos a confiança em nosso trabalho e esperamos vê-lo em sua próxima revisão!"
 			);
 		}
 	}
@@ -95,8 +94,8 @@ public class ServiceOrderNotificationListener {
 			log.info("Triggering notifications for NEW Service Order. Assignee: {}", mechanic.getEmail());
 
 			sendEmail(mechanic.getEmail(),
-					"New Service Order Assigned",
-					"A new service order (OS #" + order.getId() + ") has been assigned to you. Please review the details and prepare for the diagnosis.");
+					"Nova Ordem de Serviço Atribuída",
+					"Uma nova ordem de serviço (OS #" + order.getId() + ") foi designada a você. Por favor, revise os detalhes do veículo e prepare-se para o diagnóstico.");
 		}
 	}
 

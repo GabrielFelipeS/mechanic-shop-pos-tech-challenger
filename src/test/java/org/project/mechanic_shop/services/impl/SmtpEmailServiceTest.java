@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.mechanic_shop.services.EmailService;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class SmtpEmailServiceTest {
@@ -26,6 +27,7 @@ class SmtpEmailServiceTest {
 	@BeforeEach
 	void setup() {
 		service = new SmtpEmailServiceImpl(mailSender);
+		ReflectionTestUtils.setField(service, "senderEmail", "system@mechanicshop.com");
 	}
 
 	@Test
@@ -38,7 +40,7 @@ class SmtpEmailServiceTest {
 		verify(mailSender).send(captor.capture());
 
 		SimpleMailMessage message = captor.getValue();
-		assertThat(message.getFrom()).isEqualTo("sistema@mechanicshop.com");
+		assertThat(message.getFrom()).isEqualTo("system@mechanicshop.com");
 		assertThat(message.getTo()).containsExactly(recipients);
 		assertThat(message.getSubject()).isEqualTo("Assunto");
 		assertThat(message.getText()).isEqualTo("Corpo");
