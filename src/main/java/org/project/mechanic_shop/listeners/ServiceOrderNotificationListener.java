@@ -37,7 +37,9 @@ public class ServiceOrderNotificationListener {
 		log.info("Triggering notifications for status change: {} -> {}", event.oldStatus(), event.newStatus());
 
 		switch (event.newStatus()) {
-			case RECEIVED -> log.debug("No email mapped for RECEIVED status. Waiting for diagnosis to start.");
+			case RECEIVED -> sendEmail(mechanicEmail,
+					"New Service Order Assigned",
+					"A new service order (OS #" + order.getId() + ") has been assigned to you. Please review the details and prepare for the diagnosis.");
 			case DIAGNOSIS -> sendEmail(
 				customerEmail,
 				"Service Update: Diagnosis Started",

@@ -1,14 +1,8 @@
 package org.project.mechanic_shop.services.impl;
 
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.sql.ast.SqlTreeCreationException;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
@@ -27,6 +21,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
