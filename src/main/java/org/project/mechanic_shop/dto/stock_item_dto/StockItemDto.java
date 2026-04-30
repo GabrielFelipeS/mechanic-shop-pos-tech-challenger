@@ -21,6 +21,7 @@ public record StockItemDto(
 	String name,
 	String description,
 	Integer quantity,
+	Integer pendingDemand,
 	BigDecimal costPrice,
 	BigDecimal salePrice
 ) implements Serializable {}
