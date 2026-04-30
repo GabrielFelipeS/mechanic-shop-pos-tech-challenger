@@ -110,7 +110,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 
 ```json
 {
-  "document": "12345678909", 
+  "document": "266.441.520-40", 
   "name": "João da Silva",
   "email": "joao.silva@email.com",
   "role": "CUSTOMER", 
