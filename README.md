@@ -6,6 +6,20 @@ Este projeto foi desenvolvido com foco em regras de negócio, utilizando **Geren
 
 ---
 
+## 💻 Tecnologias Utilizadas
+
+A aplicação foi construída utilizando as seguintes tecnologias e ferramentas:
+
+* **[Java 21](https://dev.java/)**: Linguagem principal utilizada no desenvolvimento do backend.
+* **[Spring Boot](https://spring.io/projects/spring-boot)**: Framework principal para criação da API REST, facilitando a configuração e o deploy.
+* **[Spring Security](https://spring.io/projects/spring-security) & [JWT (Auth0)](https://jwt.io/)**: Implementação de segurança, autenticação e controle de acesso baseado em roles (RBAC).
+* **[PostgreSQL](https://www.postgresql.org/)**: Banco de dados relacional escolhido para persistência segura das informações.
+* **[Spring Data JPA / Hibernate](https://spring.io/projects/spring-data-jpa)**: ORM utilizado para o mapeamento objeto-relacional e comunicação com o banco de dados.
+* **[MapStruct](https://mapstruct.org/) & [Lombok](https://projectlombok.org/)**: Bibliotecas essenciais para redução de código boilerplate e mapeamento eficiente entre Entidades e DTOs.
+* **[Swagger / OpenAPI (SpringDoc)](https://swagger.io/)**: Geração automática da documentação interativa da API.
+* **[Docker](https://www.docker.com/) & Docker Compose**: Containerização da aplicação e do banco de dados, garantindo paridade entre os ambientes de desenvolvimento e produção.
+* **[Maven](https://maven.apache.org/)**: Gerenciador de dependências e automação do build da aplicação.
+
 ## Pré-requisitos para Avaliação
 
 Para rodar e testar este projeto localmente, você precisará de:
@@ -96,7 +110,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 
 ```json
 {
-  "document": "12345678909", 
+  "document": "266.441.520-40", 
   "name": "João da Silva",
   "email": "joao.silva@email.com",
   "role": "CUSTOMER", 
