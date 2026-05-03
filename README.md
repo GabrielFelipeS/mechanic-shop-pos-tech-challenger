@@ -166,13 +166,13 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 
 ```json
 {
-  "code": "OLEO-5W40",
-  "name": "Óleo Sintético 5W40",
-  "type": "CONSUMABLE", 
-  "description": "Óleo de motor para 10.000km.",
+  "code": "WHL-001",
+  "name": "Roda Aro 14 Aço",
+  "type": "PART",
+  "description": "Roda de aço aro 14 polegadas, compatível com veículos de pequeno porte (hatch e sedan compacto). Produto resistente, ideal para uso urbano.",
   "quantity": 50,
-  "costPrice": 35.00,
-  "salePrice": 65.00
+  "costPrice": 120.00,
+  "salePrice": 199.90
 }
 ```
 *(Nota: Valores aceitos para `type`: `PART` ou `CONSUMABLE`)*
