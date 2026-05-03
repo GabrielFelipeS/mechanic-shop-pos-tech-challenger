@@ -1,6 +1,5 @@
 package org.project.mechanic_shop.services;
 
-import java.util.UUID;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.models.ServiceOrder;
@@ -8,7 +7,8 @@ import org.project.mechanic_shop.models.User;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 public interface ServiceOrderService {
 	ServiceOrder createServiceOrder(ServiceOrderCreateDto dto);

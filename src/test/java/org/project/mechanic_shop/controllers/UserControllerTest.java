@@ -32,7 +32,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
-// TODO FAZER TESTES PARA VALIDAR O @VALID
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({ SecurityConfig.class, UserMapperImpl.class, ObjectMapperConfig.class })

@@ -1,14 +1,14 @@
 package org.project.mechanic_shop.dto.service_order_dto;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetDto;
 import org.project.mechanic_shop.dto.user_dto.UserShortDto;
 import org.project.mechanic_shop.dto.vehicle_dto.VehicleShortDto;
 import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO for {@link org.project.mechanic_shop.models.ServiceOrder}

@@ -4,11 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.io.Serializable;
-import org.hibernate.validator.constraints.br.CNPJ;
-import org.hibernate.validator.constraints.br.CPF;
 import org.project.mechanic_shop.common.validation.CpfOrCnpj;
 import org.project.mechanic_shop.models.enums.UserRoleEnum;
+
+import java.io.Serializable;
 
 /**
  * DTO for {@link org.project.mechanic_shop.models.User}
