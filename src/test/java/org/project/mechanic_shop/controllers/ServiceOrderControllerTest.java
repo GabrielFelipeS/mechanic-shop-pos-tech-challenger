@@ -258,6 +258,77 @@ class ServiceOrderControllerTest {
 				.andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.IN_PROGRESS.name()))
 				.andExpect(jsonPath("$.data.budget.status").value(BudgetStatusEnum.APPROVED.name()));
 		}
+
+		@Test
+		void shouldProcessRejectedBudgetResponse() throws Exception {
+			var externalId = UUID.randomUUID();
+			var serviceOrder = buildServiceOrder();
+			serviceOrder.setStatus(ServiceOrderStatusEnum.CANCELED);
+			serviceOrder.getBudget().setStatus(BudgetStatusEnum.REJECTED);
+			var dto = new BudgetResponseDto(false);
+
+			when(service.processBudgetResponse(externalId, false)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(
+					post("/api/v1/service-orders/{id}/budget-response", externalId)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(dto))
+				)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("Budget rejected. OS has been CANCELED."))
+				.andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.CANCELED.name()))
+				.andExpect(jsonPath("$.data.budget.status").value(BudgetStatusEnum.REJECTED.name()));
+		}
+	}
+
+	@Nested
+	class FinishService {
+
+		@Test
+		void shouldFinishService() throws Exception {
+			var externalId = UUID.randomUUID();
+			var serviceOrder = buildServiceOrder();
+			serviceOrder.setStatus(ServiceOrderStatusEnum.COMPLETED);
+
+			when(service.finishService(externalId)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(post("/api/v1/service-orders/{id}/finish", externalId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(
+					jsonPath("$.message").value(
+						"Service finished successfully! OS moved to COMPLETED and customer notified."
+					)
+				)
+				.andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.COMPLETED.name()));
+		}
+	}
+
+	@Nested
+	class DeliverVehicle {
+
+		@Test
+		void shouldDeliverVehicle() throws Exception {
+			var externalId = UUID.randomUUID();
+			var serviceOrder = buildServiceOrder();
+			serviceOrder.setStatus(ServiceOrderStatusEnum.DELIVERED);
+
+			when(service.deliverVehicle(externalId)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(post("/api/v1/service-orders/{id}/deliver", externalId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(
+					jsonPath("$.message").value(
+						"Vehicle delivered successfully! OS lifecycle is now closed (DELIVERED)."
+					)
+				)
+				.andExpect(jsonPath("$.data.status").value(ServiceOrderStatusEnum.DELIVERED.name()));
+		}
 	}
 
 	@Nested
@@ -347,6 +418,26 @@ class ServiceOrderControllerTest {
 			assertThat(pageable.getPageSize()).isEqualTo(10);
 			assertThat(pageable.getSort().getOrderFor("createdAt")).isNotNull();
 			assertThat(pageable.getSort().getOrderFor("createdAt").isDescending()).isTrue();
+		}
+
+		@Test
+		void shouldSearchFilteringByMechanicId() throws Exception {
+			var serviceOrder = buildServiceOrder();
+			var mechanic = serviceOrder.getResponsibleMechanic();
+			Page<ServiceOrder> page = new PageImpl<>(List.of(serviceOrder), PageRequest.of(0, 10), 1);
+
+			when(userService.findByExternalId(mechanic.getExternalId())).thenReturn(mechanic);
+			when(service.search(eq(null), eq(null), any(Pageable.class), eq(mechanic))).thenReturn(page);
+
+			mockMvc
+				.perform(get("/api/v1/service-orders/search").param("mechanicId", mechanic.getExternalId().toString()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("success"))
+				.andExpect(jsonPath("$.data.content[0].customerName").value(serviceOrder.getVehicle().getOwner().getName()));
+
+			verify(userService).findByExternalId(mechanic.getExternalId());
+			verify(service).search(eq(null), eq(null), any(Pageable.class), eq(mechanic));
 		}
 	}
 
