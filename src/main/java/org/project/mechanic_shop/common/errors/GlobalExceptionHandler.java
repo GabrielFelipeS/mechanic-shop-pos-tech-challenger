@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
 	public ErrorResponse handleRuntimeException(RuntimeException e) {
 		log.error(" ############################################### Error: {}", String.valueOf(e.getCause()));
 		log.error(" ############################################### Error: {}", e.getMessage());
-		e.printStackTrace();
+		log.error("#################################### Unexpected Runtime Error", e);
 		return new ErrorResponse(
 			HttpStatus.INTERNAL_SERVER_ERROR.value(),
 			"Unexpected error: Contact the technical team.",
@@ -59,8 +59,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Throwable.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	public ErrorResponse handleThrowable(Throwable e) {
-		log.error(" ####################################" + "CRITICAL ERROR: " + e.getMessage());
-		e.printStackTrace();
+        log.error(" ####################################CRITICAL ERROR: {}", e.getMessage());
+		log.error("#################################### Unexpected Runtime Error", e);
 		return new ErrorResponse(
 			HttpStatus.INTERNAL_SERVER_ERROR.value(),
 			"Critical error internal. contact the technical team.",
