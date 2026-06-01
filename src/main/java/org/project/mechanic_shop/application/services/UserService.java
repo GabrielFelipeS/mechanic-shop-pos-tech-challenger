@@ -1,0 +1,16 @@
+package org.project.mechanic_shop.application.services;
+
+import java.util.UUID;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface UserService {
+	User create(User obj);
+
+	User findByExternalId(UUID externalId);
+
+	Page<User> search(String document, String name, String email, String role, Pageable pageable);
+
+	User update(UUID id, User update);
+}

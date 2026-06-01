@@ -1,9 +1,9 @@
 package org.project.mechanic_shop.utils;
 
 import java.util.Set;
-import org.project.mechanic_shop.dto.user_dto.UserManDto;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.enums.UserRoleEnum;
+import org.project.mechanic_shop.domain.dto.user_dto.UserManDto;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.enums.UserRoleEnum;
 
 public class UserHelper {
 

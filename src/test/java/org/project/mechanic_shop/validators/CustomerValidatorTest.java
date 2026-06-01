@@ -12,7 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
+import org.project.mechanic_shop.application.validators.UserValidator;
 import org.project.mechanic_shop.utils.UserHelper;
 
 @ExtendWith(MockitoExtension.class)

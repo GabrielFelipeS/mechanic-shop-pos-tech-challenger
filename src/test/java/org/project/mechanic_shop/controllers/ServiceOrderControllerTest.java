@@ -1,42 +1,36 @@
 package org.project.mechanic_shop.controllers;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.project.mechanic_shop.application.mappers.ServiceOrderMapperImpl;
+import org.project.mechanic_shop.application.mappers.UserMapperImpl;
+import org.project.mechanic_shop.application.mappers.VehicleMapperImpl;
+import org.project.mechanic_shop.application.services.ServiceOrderService;
+import org.project.mechanic_shop.application.services.UserService;
 import org.project.mechanic_shop.config.ObjectMapperConfig;
 import org.project.mechanic_shop.config.SecurityConfig;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
-import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetResponseDto;
-import org.project.mechanic_shop.mappers.ServiceOrderMapperImpl;
-import org.project.mechanic_shop.mappers.UserMapperImpl;
-import org.project.mechanic_shop.mappers.VehicleMapperImpl;
-import org.project.mechanic_shop.models.*;
-import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
-import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.models.enums.UserRoleEnum;
-import org.project.mechanic_shop.services.ServiceOrderService;
-import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.budget_dto.BudgetResponseDto;
+import org.project.mechanic_shop.domain.entities.budget.Budget;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
+import org.project.mechanic_shop.domain.entities.service_order_labor.ServiceOrderLabor;
+import org.project.mechanic_shop.domain.entities.service_order_stock_item.ServiceOrderStockItem;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
+import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.domain.enums.UserRoleEnum;
+
+import org.project.mechanic_shop.presentation.controllers.ServiceOrderController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -49,6 +43,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ServiceOrderController.class)
 @AutoConfigureMockMvc(addFilters = false)

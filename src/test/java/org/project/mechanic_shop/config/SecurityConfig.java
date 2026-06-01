@@ -1,9 +1,9 @@
 package org.project.mechanic_shop.config;
 
 import org.mockito.Mockito;
-import org.project.mechanic_shop.config.security.AuthorizationService;
-import org.project.mechanic_shop.config.security.SecurityFilter;
-import org.project.mechanic_shop.config.security.TokenService;
+import org.project.mechanic_shop.shared.config.security.AuthorizationService;
+import org.project.mechanic_shop.shared.config.security.SecurityFilter;
+import org.project.mechanic_shop.shared.config.security.TokenService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 

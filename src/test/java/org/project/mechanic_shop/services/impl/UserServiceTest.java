@@ -17,11 +17,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.repositories.UserRepository;
-import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.application.services.impl.UserServiceImpl;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
+import org.project.mechanic_shop.application.services.UserService;
 import org.project.mechanic_shop.utils.UserHelper;
-import org.project.mechanic_shop.validators.UserValidator;
+import org.project.mechanic_shop.application.validators.UserValidator;
 import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 

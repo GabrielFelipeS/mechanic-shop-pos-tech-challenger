@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.dto.stock_item_dto.StockItemManDto;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.repositories.StockItemRepository;
+import org.project.mechanic_shop.domain.dto.stock_item_dto.StockItemManDto;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.infrastructure.repositories.StockItemRepository;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,8 +1,8 @@
 package org.project.mechanic_shop.utils;
 
 import java.math.BigDecimal;
-import org.project.mechanic_shop.dto.mechanic_service_dto.MechanicServiceShortDto;
-import org.project.mechanic_shop.models.MechanicService;
+import org.project.mechanic_shop.domain.dto.mechanic_service_dto.MechanicServiceShortDto;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
 
 public class MechanicServiceHelper {
 
