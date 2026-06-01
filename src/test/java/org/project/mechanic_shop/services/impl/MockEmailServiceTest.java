@@ -3,7 +3,8 @@ package org.project.mechanic_shop.services.impl;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.services.EmailService;
+import org.project.mechanic_shop.infrastructure.http.EmailService;
+import org.project.mechanic_shop.infrastructure.http.impl.MockEmailServiceImpl;
 
 class MockEmailServiceTest {
 

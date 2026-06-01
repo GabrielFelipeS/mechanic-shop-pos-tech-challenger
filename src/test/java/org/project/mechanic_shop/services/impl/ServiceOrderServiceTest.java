@@ -20,28 +20,30 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
-import org.project.mechanic_shop.events.NewServiceOrderEvent;
-import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
-import org.project.mechanic_shop.models.Budget;
-import org.project.mechanic_shop.models.ServiceOrder;
-import org.project.mechanic_shop.models.ServiceOrderLabor;
-import org.project.mechanic_shop.models.ServiceOrderStockItem;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.Vehicle;
-import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
-import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.repositories.ServiceOrderRepository;
-import org.project.mechanic_shop.services.MechanicServiceService;
-import org.project.mechanic_shop.services.ServiceOrderService;
-import org.project.mechanic_shop.services.StockItemService;
-import org.project.mechanic_shop.services.UserService;
-import org.project.mechanic_shop.services.VehicleService;
+import org.project.mechanic_shop.application.services.impl.ServiceOrderServiceImpl;
+import org.project.mechanic_shop.domain.entities.budget.Budget;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
+import org.project.mechanic_shop.domain.entities.service_order_labor.ServiceOrderLabor;
+import org.project.mechanic_shop.domain.entities.service_order_stock_item.ServiceOrderStockItem;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
+import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
+import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
+import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
+import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.infrastructure.repositories.ServiceOrderRepository;
+import org.project.mechanic_shop.application.services.MechanicServiceService;
+import org.project.mechanic_shop.application.services.ServiceOrderService;
+import org.project.mechanic_shop.application.services.StockItemService;
+import org.project.mechanic_shop.application.services.UserService;
+import org.project.mechanic_shop.application.services.VehicleService;
 import org.project.mechanic_shop.utils.MechanicServiceHelper;
 import org.project.mechanic_shop.utils.UserHelper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -453,7 +455,7 @@ class ServiceOrderServiceTest {
 	}
 
 	private ServiceOrderLabor serviceOrderLabor(
-		org.project.mechanic_shop.models.MechanicService mechanicService,
+		MechanicService mechanicService,
 		int quantity
 	) {
 		var labor = new ServiceOrderLabor();
