@@ -15,11 +15,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.project.mechanic_shop.application.mappers.MechanicServiceMapperImpl;
+import org.project.mechanic_shop.presentation.controllers.MechanicServiceController;
 import org.project.mechanic_shop.config.ObjectMapperConfig;
 import org.project.mechanic_shop.config.SecurityConfig;
-import org.project.mechanic_shop.mappers.MechanicServiceMapperImpl;
-import org.project.mechanic_shop.models.MechanicService;
-import org.project.mechanic_shop.services.MechanicServiceService;
+
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.application.services.MechanicServiceService;
 import org.project.mechanic_shop.utils.MechanicServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;

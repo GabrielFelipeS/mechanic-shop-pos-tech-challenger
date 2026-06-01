@@ -7,8 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.dto.login_dto.LoginDto;
-import org.project.mechanic_shop.repositories.UserRepository;
+import org.project.mechanic_shop.domain.dto.login_dto.LoginDto;
+import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

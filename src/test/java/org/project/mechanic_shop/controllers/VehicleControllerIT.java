@@ -10,12 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.dto.vehicle_dto.VehicleManDto;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.Vehicle;
-import org.project.mechanic_shop.models.enums.UserRoleEnum;
-import org.project.mechanic_shop.repositories.UserRepository;
-import org.project.mechanic_shop.repositories.VehicleRepository;
+import org.project.mechanic_shop.domain.dto.vehicle_dto.VehicleManDto;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.domain.enums.UserRoleEnum;
+import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
+import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
