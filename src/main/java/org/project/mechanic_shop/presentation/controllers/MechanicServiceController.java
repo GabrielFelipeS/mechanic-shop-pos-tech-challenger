@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -33,6 +34,10 @@ public class MechanicServiceController {
 
 	private static final String SUCCESS_MESSAGE = "success";
 
+	@Operation(summary = "Find mechanic service by ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Service found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service not found")
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
@@ -44,6 +49,11 @@ public class MechanicServiceController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 
+	@Operation(summary = "Create a new mechanic service", description = "Adds a service to the catalog with its estimated time and price.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Service created — returns the new service's external ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Service name already registered")
 	@PostMapping("/create")
 	@PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid MechanicServiceManDto dto) {
@@ -58,6 +68,11 @@ public class MechanicServiceController {
 		);
 	}
 
+	@Operation(summary = "Update mechanic service data")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Service updated")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service not found")
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid MechanicServiceManDto dto) {
@@ -72,6 +87,8 @@ public class MechanicServiceController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, mechanicServiceDto));
 	}
 
+	@Operation(summary = "Search mechanic services", description = "Returns a paginated list of catalog services filtered by name.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
 	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> search(

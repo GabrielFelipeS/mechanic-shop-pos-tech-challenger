@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStatusDto;
 import org.project.mechanic_shop.domain.dto.responses.ApiResponse;
 import org.project.mechanic_shop.domain.dto.service_order_dto.budget_dto.BudgetResponseDto;
 import org.project.mechanic_shop.application.mappers.ServiceOrderMapper;
@@ -22,34 +24,103 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/service-orders") // Atualize para /api/service-orders se preferir sem o v1
+@RequestMapping("/api/v1/service-orders")
 @RequiredArgsConstructor
 @Tag(name = "Service Orders")
 @Slf4j
 public class ServiceOrderController {
 
 	private final ServiceOrderService service;
-	private final ServiceOrderMapper mapper; // Lembre-se de criar este Mapper (MapStruct ou manual)
+	private final ServiceOrderMapper mapper;
 
 	private static final String SUCCESS_MESSAGE = "success";
 	private final UserService userService;
 
+	@Operation(
+		summary = "Process budget approval via email link",
+		description = "Public endpoint — no authentication required. Called when the customer clicks the approve/reject link in the notification email. Token is single-use."
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Response processed")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Token invalid or already used")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is no longer pending approval")
+	@GetMapping(value = "/budget-approval", produces = MediaType.TEXT_HTML_VALUE)
+	public ResponseEntity<String> processBudgetApprovalByEmail(
+		@RequestParam String token,
+		@RequestParam boolean approved
+	) {
+		log.info("Email budget approval link clicked. Approved: {}", approved);
+
+		service.processBudgetResponseByToken(token, approved);
+
+		String title = approved ? "Orçamento Aprovado!" : "Orçamento Recusado";
+		String icon  = approved ? "✅" : "❌";
+		String msg   = approved
+			? "Obrigado! O serviço foi aprovado e nossa equipe já iniciará os reparos."
+			: "Entendemos. A ordem de serviço foi cancelada. Por favor, providencie a retirada do seu veículo.";
+
+		String html = "<html><body style='font-family:sans-serif;text-align:center;padding:60px'>" +
+			"<h1>" + icon + " " + title + "</h1>" +
+			"<p style='font-size:18px'>" + msg + "</p>" +
+			"</body></html>";
+
+		return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+	}
+
+	@Operation(summary = "List active service orders", description = "Returns a paginated list of active orders (excludes COMPLETED, DELIVERED and CANCELED). Fixed sort: IN_PROGRESS → PENDING_APPROVAL → DIAGNOSIS → RECEIVED, oldest first within each group.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
+	@GetMapping
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
+	public ResponseEntity<ApiResponse> listActive(
+		@ParameterObject @PageableDefault(size = 10) Pageable pageable
+	) {
+		log.info("Listing active service orders");
+
+		Page<ServiceOrder> orders = service.listActiveOrders(pageable);
+		var dto = orders.map(mapper::toShortDto);
+
+		return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
+	}
+
+	@Operation(summary = "Find service order by ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Service order found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
 		log.info("Find service order by External ID: {}", id);
 
 		var serviceOrder = service.findByExternalId(id);
-		var dto = mapper.toDto(serviceOrder); // Retorna a OS completa com peças e serviços
+		var dto = mapper.toDto(serviceOrder);
 
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 
+	@Operation(summary = "Get current status of a service order", description = "Lightweight endpoint returning only the status and deadline fields — no labors, parts or full details.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status returned")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
+	@GetMapping("/{id}/status")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'CUSTOMER')")
+	public ResponseEntity<ApiResponse> getStatus(@PathVariable UUID id) {
+		log.info("Get status for service order: {}", id);
+
+		ServiceOrderStatusDto dto = mapper.toStatusDto(service.findByExternalId(id));
+
+		return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
+	}
+
+	@Operation(summary = "Open a new service order", description = "Creates a service order with RECEIVED status for the given vehicle. Optionally assigns a mechanic.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Service order created — returns the new order's external ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle or mechanic not found")
 	@PostMapping("/create")
 	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid ServiceOrderCreateDto dto) {
@@ -62,6 +133,11 @@ public class ServiceOrderController {
 		);
 	}
 
+	@Operation(summary = "Update diagnosis and quote", description = "Records the mechanic's diagnosis and fills in the labors and parts for the budget. Transitions the order from RECEIVED to DIAGNOSIS on first update.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Quote updated")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error or order in a non-editable state")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order, mechanic service or stock item not found")
 	@PutMapping("/{id}/quote")
 	@PreAuthorize("hasAnyRole('ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> updateQuote(
@@ -76,6 +152,11 @@ public class ServiceOrderController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, soDto));
 	}
 
+	@Operation(summary = "Send budget for customer approval", description = "Closes the diagnosis phase and moves the order to PENDING_APPROVAL. Calculates the estimated completion deadline.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Approval requested — order is now PENDING_APPROVAL")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is not in DIAGNOSIS status")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
 	@PostMapping("/{id}/request-approval")
 	@PreAuthorize("hasAnyRole('MECHANIC', 'ADMIN')")
 	public ResponseEntity<ApiResponse> requestApproval(@PathVariable UUID id) {
@@ -93,6 +174,11 @@ public class ServiceOrderController {
 		);
 	}
 
+	@Operation(summary = "Process customer budget response", description = "If approved, withdraws stock and moves the order to IN_PROGRESS. If rejected, cancels the order.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Budget response processed")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is not in PENDING_APPROVAL status")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
 	@PostMapping("/{id}/budget-response")
 	@PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
 	public ResponseEntity<ApiResponse> processBudgetResponse(
@@ -111,6 +197,11 @@ public class ServiceOrderController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), message, dto));
 	}
 
+	@Operation(summary = "Finish the service", description = "Marks the service as COMPLETED and records the actual finish date. Order must be IN_PROGRESS.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Service finished — order is now COMPLETED")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is not IN_PROGRESS")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
 	@PostMapping("/{id}/finish")
 	@PreAuthorize("hasAnyRole('MECHANIC', 'ADMIN')")
 	public ResponseEntity<ApiResponse> finishService(@PathVariable UUID id) {
@@ -128,6 +219,11 @@ public class ServiceOrderController {
 		);
 	}
 
+	@Operation(summary = "Deliver vehicle to customer", description = "Closes the service order lifecycle by moving it to DELIVERED. Order must be COMPLETED.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vehicle delivered — order is now DELIVERED")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is not COMPLETED")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service order not found")
 	@PostMapping("/{id}/deliver")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> deliverVehicle(@PathVariable UUID id) {
@@ -145,6 +241,8 @@ public class ServiceOrderController {
 		);
 	}
 
+	@Operation(summary = "Search service orders", description = "Returns a paginated list of service orders filtered by license plate, status or responsible mechanic.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
 	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> search(

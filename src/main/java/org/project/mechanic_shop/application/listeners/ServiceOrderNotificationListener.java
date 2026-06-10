@@ -8,6 +8,7 @@ import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.infrastructure.http.EmailService;
 import org.project.mechanic_shop.application.services.ServiceOrderService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -22,6 +23,9 @@ public class ServiceOrderNotificationListener {
 
 	private final EmailService emailService;
 	private final ServiceOrderService serviceOrderService;
+
+	@Value("${app.base-url}")
+	private String baseUrl;
 
 	@Async
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
@@ -43,11 +47,19 @@ public class ServiceOrderNotificationListener {
 					"Atualização do Serviço: Diagnóstico Iniciado",
 					"Seu veículo já está sendo avaliado por nossos mecânicos. Enviaremos o orçamento completo em breve."
 			);
-			case PENDING_APPROVAL -> sendEmail(
-					customerEmail,
-					"Ação Necessária: Orçamento Pendente de Aprovação",
-					"O diagnóstico está concluído! Por favor, acesse nosso sistema, revise e aprove o orçamento para que possamos iniciar os reparos. Código da OS: " + order.getExternalId()
-			);
+			case PENDING_APPROVAL -> {
+				String token = order.getApprovalToken();
+				String approveUrl = baseUrl + "/api/v1/service-orders/budget-approval?token=" + token + "&approved=true";
+				String rejectUrl  = baseUrl + "/api/v1/service-orders/budget-approval?token=" + token + "&approved=false";
+				String body = "O diagnóstico do seu veículo foi concluído e o orçamento está pronto para sua análise.\n\n" +
+						"OS: " + order.getExternalId() + "\n" +
+						"Total do Orçamento: R$ " + order.getBudget().getTotalAmount() + "\n\n" +
+						"Clique em um dos links abaixo para responder:\n\n" +
+						"✅ APROVAR: " + approveUrl + "\n\n" +
+						"❌ RECUSAR: " + rejectUrl + "\n\n" +
+						"Atenção: cada link pode ser utilizado apenas uma vez.";
+				sendEmail(customerEmail, "Ação Necessária: Orçamento Pendente de Aprovação", body);
+			}
 			case IN_PROGRESS -> sendEmail(
 					mechanicEmail,
 					"Tarefa Aprovada: Iniciar Reparos",

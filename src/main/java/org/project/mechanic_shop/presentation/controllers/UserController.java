@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Arrays;
@@ -37,6 +38,10 @@ public class UserController {
 
 	private static final String SUCCESS_MESSAGE = "success";
 
+	@Operation(summary = "Find user by ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
@@ -48,6 +53,11 @@ public class UserController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 
+	@Operation(summary = "Create a new user")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User created — returns the new user's external ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Document or e-mail already registered")
 	@PostMapping("/create")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid UserManDto dto) {
@@ -62,6 +72,11 @@ public class UserController {
 		);
 	}
 
+	@Operation(summary = "Update user data")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User updated")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid UserManDto dto) {
@@ -76,6 +91,8 @@ public class UserController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, userDto));
 	}
 
+	@Operation(summary = "Search users", description = "Returns a paginated list of users filtered by any combination of document, name, e-mail and role.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> search(
@@ -98,6 +115,8 @@ public class UserController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, listDto));
 	}
 
+	@Operation(summary = "List available roles", description = "Returns all assignable roles (ADMIN is excluded).")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "List of roles")
 	@GetMapping("/available-roles")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> getAvailableRoles() {

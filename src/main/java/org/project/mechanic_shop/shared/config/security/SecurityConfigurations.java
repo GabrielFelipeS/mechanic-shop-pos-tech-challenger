@@ -33,6 +33,8 @@ public class SecurityConfigurations {
 				authorize
 					.requestMatchers(HttpMethod.POST, "/api/auth/login")
 					.permitAll()
+					.requestMatchers(HttpMethod.GET, "/api/v1/service-orders/budget-approval")
+					.permitAll()
 					.requestMatchers(
 						"/v2/api-docs/**",
 						"/v3/api-docs/**",

@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,10 @@ public class AuthController {
 
 	String successMessage = "success";
 
+	@Operation(summary = "Authenticate user", description = "Validates credentials and returns a JWT bearer token.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Authentication successful — JWT token returned")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing or invalid fields")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials")
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponse> login(@RequestBody @Valid LoginDto data) {
 		var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());

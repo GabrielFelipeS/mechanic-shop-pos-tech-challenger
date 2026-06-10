@@ -23,7 +23,11 @@ public interface ServiceOrderService {
 
 	Page<ServiceOrder> search(String licensePlate, ServiceOrderStatusEnum status, Pageable pageable, User mechanic);
 
+	Page<ServiceOrder> listActiveOrders(Pageable pageable);
+
 	ServiceOrder requestCustomerApproval(UUID externalId);
 
 	ServiceOrder processBudgetResponse(UUID externalId, boolean approved);
+
+	ServiceOrder processBudgetResponseByToken(String token, boolean approved);
 }
