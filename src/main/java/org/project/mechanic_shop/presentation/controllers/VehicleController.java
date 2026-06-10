@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -33,6 +34,10 @@ public class VehicleController {
 
 	private static final String SUCCESS_MESSAGE = "success";
 
+	@Operation(summary = "Find vehicle by ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vehicle found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
@@ -44,6 +49,12 @@ public class VehicleController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 
+	@Operation(summary = "Register a new vehicle")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Vehicle created — returns the new vehicle's external ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Owner (user) not found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "License plate already registered")
 	@PostMapping("/create")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid VehicleManDto dto) {
@@ -58,6 +69,11 @@ public class VehicleController {
 		);
 	}
 
+	@Operation(summary = "Update vehicle data")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vehicle updated")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle or new owner not found")
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
 	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid VehicleManDto dto) {
@@ -72,13 +88,15 @@ public class VehicleController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, vehicleDto));
 	}
 
+	@Operation(summary = "Search vehicles", description = "Returns a paginated list of vehicles filtered by license plate, brand, model or owner.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
 	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> search(
 		@RequestParam(name = "licensePlate", required = false) String licensePlate,
 		@RequestParam(name = "brand", required = false) String brand,
 		@RequestParam(name = "model", required = false) String model,
-		@RequestParam(name = "ownerId", required = false) UUID ownerId, // <--- Novo parâmetro
+		@RequestParam(name = "ownerId", required = false) UUID ownerId,
 		@ParameterObject @PageableDefault(
 			size = 10,
 			sort = "createdAt",

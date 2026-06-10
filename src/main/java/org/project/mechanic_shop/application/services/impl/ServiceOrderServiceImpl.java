@@ -27,9 +27,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,20 +59,17 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		log.info("Creating new Service Order for vehicle: {}", dto.vehicleExternalId());
 
 		ServiceOrder serviceOrder = new ServiceOrder();
-		Vehicle vehicle = vehicleService.findByExternalId(dto.vehicleExternalId());
-
-		serviceOrder.setVehicle(vehicle);
+		serviceOrder.setVehicle(vehicleService.findByExternalId(dto.vehicleExternalId()));
 		serviceOrder.setCustomerComplaint(dto.customerComplaint());
 		serviceOrder.setOdometerReading(dto.odometerReading());
 		serviceOrder.setStatus(ServiceOrderStatusEnum.RECEIVED);
-
-		Budget initialBudget = new Budget();
-		serviceOrder.setBudget(initialBudget);
+		serviceOrder.setBudget(new Budget());
 
 		if (dto.mechanicExternalId() != null) {
-			User mechanic = userService.findByExternalId(dto.mechanicExternalId());
-			serviceOrder.setResponsibleMechanic(mechanic);
+			serviceOrder.setResponsibleMechanic(userService.findByExternalId(dto.mechanicExternalId()));
 		}
+
+		boolean hasItems = applyInitialItems(serviceOrder, dto);
 
 		ServiceOrder savedOrder = serviceOrderRepository.save(serviceOrder);
 
@@ -77,8 +77,72 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			eventPublisher.publishEvent(new NewServiceOrderEvent(savedOrder));
 		}
 
+		if (hasItems) {
+			eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(
+				savedOrder.getExternalId(),
+				ServiceOrderStatusEnum.RECEIVED,
+				ServiceOrderStatusEnum.DIAGNOSIS
+			));
+		}
+
 		log.info("Service Order created successfully. ID: {}", savedOrder.getId());
 		return savedOrder;
+	}
+
+	private boolean applyInitialItems(ServiceOrder order, ServiceOrderCreateDto dto) {
+		boolean hasLabors = dto.labors() != null && !dto.labors().isEmpty();
+		boolean hasParts  = dto.parts()  != null && !dto.parts().isEmpty();
+
+		if (!hasLabors && !hasParts) return false;
+
+		BigDecimal total = BigDecimal.ZERO;
+
+		if (hasLabors) total = total.add(addLabors(order, dto.labors()));
+		if (hasParts)  total = total.add(addParts(order, dto.parts()));
+
+		order.getBudget().setTotalAmount(total);
+		order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
+		log.info("Initial quote provided at creation — status set to DIAGNOSIS.");
+		return true;
+	}
+
+	private BigDecimal addLabors(ServiceOrder order, List<ServiceOrderLaborManDto> labors) {
+		BigDecimal total = BigDecimal.ZERO;
+		for (ServiceOrderLaborManDto laborDto : labors) {
+			MechanicService mechanicService = mechanicServiceCatalog.findByExternalId(laborDto.mechanicServiceExternalId());
+			BigDecimal unitPrice  = mechanicService.getPrice();
+			BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(laborDto.quantity()));
+
+			ServiceOrderLabor labor = new ServiceOrderLabor();
+			labor.setMechanicService(mechanicService);
+			labor.setQuantity(laborDto.quantity());
+			labor.setUnitPrice(unitPrice);
+			labor.setTotalPrice(totalPrice);
+
+			order.addLabor(labor);
+			total = total.add(totalPrice);
+		}
+		return total;
+	}
+
+	private BigDecimal addParts(ServiceOrder order, List<ServiceOrderStockItemManDto> parts) {
+		BigDecimal total = BigDecimal.ZERO;
+		for (ServiceOrderStockItemManDto partDto : parts) {
+			StockItem stockItem = stockItemService.findByExternalId(partDto.partExternalId());
+			BigDecimal unitPrice  = stockItem.getSalePrice();
+			BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(partDto.quantity()));
+
+			ServiceOrderStockItem orderPart = new ServiceOrderStockItem();
+			orderPart.setStockItem(stockItem);
+			orderPart.setStockItemType(stockItem.getType());
+			orderPart.setQuantity(partDto.quantity());
+			orderPart.setUnitPrice(unitPrice);
+			orderPart.setTotalPrice(totalPrice);
+
+			order.addStockItem(orderPart);
+			total = total.add(totalPrice);
+		}
+		return total;
 	}
 
 	@Override
@@ -181,6 +245,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
 
 		order.getBudget().setStatus(BudgetStatusEnum.SENT);
+		order.setApprovalToken(UUID.randomUUID().toString());
 
 		setEstimatedDeadline(order);
 
@@ -347,6 +412,68 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
 
 		return serviceOrderRepository.findAll(Example.of(probe, matcher), pageable);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<ServiceOrder> listActiveOrders(Pageable pageable) {
+		log.info("Listing active service orders with business ordering");
+
+		List<ServiceOrderStatusEnum> excluded = List.of(
+			ServiceOrderStatusEnum.COMPLETED,
+			ServiceOrderStatusEnum.DELIVERED,
+			ServiceOrderStatusEnum.CANCELED
+		);
+
+		Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+
+		return serviceOrderRepository.findActiveOrders(
+			excluded,
+			ServiceOrderStatusEnum.IN_PROGRESS,
+			ServiceOrderStatusEnum.PENDING_APPROVAL,
+			ServiceOrderStatusEnum.DIAGNOSIS,
+			ServiceOrderStatusEnum.RECEIVED,
+			unsorted
+		);
+	}
+
+	@Override
+	@Transactional
+	public ServiceOrder processBudgetResponseByToken(String token, boolean approved) {
+		log.info("Processing budget response via email token. Approved: {}", approved);
+
+		ServiceOrder order = serviceOrderRepository
+			.findByApprovalToken(token)
+			.orElseThrow(() -> new EntityNotFoundException("Token de aprovação inválido ou já utilizado."));
+
+		if (order.getStatus() != ServiceOrderStatusEnum.PENDING_APPROVAL) {
+			throw new IllegalStateException("Esta OS não está mais aguardando aprovação: " + order.getStatus());
+		}
+
+		order.setApprovalToken(null);
+
+		ServiceOrderStatusEnum oldStatus = order.getStatus();
+
+		if (approved) {
+			order.getBudget().setStatus(BudgetStatusEnum.APPROVED);
+			log.info("Budget approved via email! Withdrawing stock for {} items.", order.getStockItems().size());
+			for (ServiceOrderStockItem item : order.getStockItems()) {
+				stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
+			}
+			order.setApprovalDate(LocalDateTime.now());
+			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+		} else {
+			order.getBudget().setStatus(BudgetStatusEnum.REJECTED);
+			order.setStatus(ServiceOrderStatusEnum.CANCELED);
+			log.info("Budget rejected via email. Service Order canceled.");
+		}
+
+		ServiceOrder updatedOrder = serviceOrderRepository.save(order);
+		eventPublisher.publishEvent(
+			new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, order.getStatus())
+		);
+
+		return updatedOrder;
 	}
 
 	public void setEstimatedDeadline(ServiceOrder order) {

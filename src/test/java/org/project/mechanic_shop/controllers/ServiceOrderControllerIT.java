@@ -84,7 +84,9 @@ class ServiceOrderControllerIT {
 			vehicle.getExternalId(),
 			"Motor falhando",
 			45210,
-			mechanic.getExternalId()
+			mechanic.getExternalId(),
+			null,
+			null
 		);
 
 		String responseBody = mockMvc
@@ -117,7 +119,7 @@ class ServiceOrderControllerIT {
 
 	@Test
 	void shouldReturnValidationErrorWhenCreatePayloadIsInvalid() throws Exception {
-		ServiceOrderCreateDto invalidPayload = new ServiceOrderCreateDto(null, "", 45210, null);
+		ServiceOrderCreateDto invalidPayload = new ServiceOrderCreateDto(null, "", 45210, null, null, null);
 
 		mockMvc
 			.perform(
