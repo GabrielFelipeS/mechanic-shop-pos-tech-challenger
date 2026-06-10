@@ -80,6 +80,9 @@ public class ServiceOrder extends BaseAuditEntity {
 	@Column(name = "actual_completion_days")
 	private Integer actualCompletionDays;
 
+	@Column(name = "approval_token", unique = true)
+	private String approvalToken;
+
 	public void addStockItem(ServiceOrderStockItem stockItem) {
 		stockItems.add(stockItem);
 		stockItem.setServiceOrder(this);

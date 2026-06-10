@@ -16,6 +16,12 @@ services:
       - mechanic-shop-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mechanic-shop-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   pgadmin:
     image: dpage/pgadmin4
@@ -29,7 +35,8 @@ services:
     networks:
       - mechanic-shop-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   mailpit:
     image: axllent/mailpit
@@ -54,7 +61,8 @@ services:
     networks:
       - mechanic-shop-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mechanic-shop-db
       SPRING_DATASOURCE_USERNAME: postgres

@@ -44,6 +44,7 @@ api:
       secret: "234235negknsdg#$$@#@#"
 
 app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
   seed:
     password: ${SEED_DEFAULT_PASSWORD:''}
     warehouse:

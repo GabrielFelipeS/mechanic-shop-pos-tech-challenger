@@ -442,7 +442,7 @@ class ServiceOrderControllerTest {
 	}
 
 	private ServiceOrderCreateDto buildCreateDto(UUID vehicleExternalId, UUID mechanicExternalId) {
-		return new ServiceOrderCreateDto(vehicleExternalId, "Barulho no motor", 45210, mechanicExternalId);
+		return new ServiceOrderCreateDto(vehicleExternalId, "Barulho no motor", 45210, mechanicExternalId, null, null);
 	}
 
 	private ServiceOrderQuoteDto buildQuoteDto(UUID partExternalId, UUID mechanicServiceExternalId) {

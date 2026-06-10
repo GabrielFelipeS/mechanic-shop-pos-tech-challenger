@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.presentation.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -33,6 +34,10 @@ public class StockItemController {
 
 	private static final String SUCCESS_MESSAGE = "success";
 
+	@Operation(summary = "Find stock item by ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Stock item found")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Stock item not found")
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN', 'MECHANIC', 'RECEPTIONIST')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
@@ -44,6 +49,11 @@ public class StockItemController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 
+	@Operation(summary = "Create a new stock item")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Stock item created — returns the new item's external ID")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Item code already registered")
 	@PostMapping("/create")
 	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN', 'MECHANIC')")
 	public ResponseEntity<ApiResponse> create(@RequestBody @Valid StockItemManDto dto) {
@@ -57,6 +67,11 @@ public class StockItemController {
 		);
 	}
 
+	@Operation(summary = "Update stock item data")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Stock item updated")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Stock item not found")
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN')")
 	public ResponseEntity<ApiResponse> update(@PathVariable UUID id, @RequestBody @Valid StockItemManDto dto) {
@@ -69,6 +84,8 @@ public class StockItemController {
 		return ResponseEntity.ok().body(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, partDto));
 	}
 
+	@Operation(summary = "Search stock items", description = "Returns a paginated list of stock items filtered by code or name.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
 	@PreAuthorize("hasAnyRole('WAREHOUSE_CLERK', 'ADMIN', 'MECHANIC', 'RECEPTIONIST')")
 	public ResponseEntity<ApiResponse> search(

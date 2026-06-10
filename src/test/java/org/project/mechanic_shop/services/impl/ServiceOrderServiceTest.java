@@ -95,7 +95,7 @@ class ServiceOrderServiceTest {
 		void shouldCreateServiceOrderWithoutMechanic() {
 			UUID vehicleId = UUID.randomUUID();
 			var vehicle = vehicle();
-			var dto = new ServiceOrderCreateDto(vehicleId, "Barulho no freio", 125000, null);
+			var dto = new ServiceOrderCreateDto(vehicleId, "Barulho no freio", 125000, null, null, null);
 
 			when(vehicleService.findByExternalId(vehicleId)).thenReturn(vehicle);
 			when(repository.save(any(ServiceOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -120,7 +120,7 @@ class ServiceOrderServiceTest {
 			UUID mechanicId = UUID.randomUUID();
 			var vehicle = vehicle();
 			var mechanic = mechanicUser();
-			var dto = new ServiceOrderCreateDto(vehicleId, "Trocar embreagem", 90000, mechanicId);
+			var dto = new ServiceOrderCreateDto(vehicleId, "Trocar embreagem", 90000, mechanicId, null, null);
 			ArgumentCaptor<NewServiceOrderEvent> eventCaptor = ArgumentCaptor.forClass(NewServiceOrderEvent.class);
 
 			when(vehicleService.findByExternalId(vehicleId)).thenReturn(vehicle);
