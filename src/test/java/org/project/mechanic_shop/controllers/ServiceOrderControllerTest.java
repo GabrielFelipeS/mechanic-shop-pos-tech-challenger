@@ -14,6 +14,7 @@ import org.project.mechanic_shop.config.ObjectMapperConfig;
 import org.project.mechanic_shop.config.SecurityConfig;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.budget_dto.BudgetResponseDto;
@@ -49,10 +50,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -81,6 +84,103 @@ class ServiceOrderControllerTest {
 
 	@MockitoBean
 	private UserService userService;
+
+	@Nested
+	class ListActive {
+
+		@Test
+		void shouldListActiveServiceOrdersWithDefaultPagination() throws Exception {
+			var serviceOrder = buildServiceOrder();
+			Page<ServiceOrder> page = new PageImpl<>(List.of(serviceOrder), PageRequest.of(0, 10), 1);
+
+			when(service.listActiveOrders(any(Pageable.class))).thenReturn(page);
+
+			mockMvc
+				.perform(get("/api/v1/service-orders"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("success"))
+				.andExpect(
+					jsonPath("$.data.content[0].licensePlate").value(serviceOrder.getVehicle().getLicensePlate())
+				)
+				.andExpect(jsonPath("$.data.content[0].status").value(serviceOrder.getStatus().name()))
+				.andExpect(
+					jsonPath("$.data.content[0].customerName").value(serviceOrder.getVehicle().getOwner().getName())
+				);
+		}
+	}
+
+	@Nested
+	class GetStatus {
+
+		@Test
+		void shouldReturnStatusDtoForExistingOrder() throws Exception {
+			var externalId = UUID.randomUUID();
+			var serviceOrder = buildServiceOrder();
+
+			when(service.findByExternalId(externalId)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(get("/api/v1/service-orders/{id}/status", externalId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("success"))
+				.andExpect(jsonPath("$.data.externalId").value(serviceOrder.getExternalId().toString()))
+				.andExpect(jsonPath("$.data.status").value(serviceOrder.getStatus().name()))
+				.andExpect(jsonPath("$.data.budgetStatus").value(serviceOrder.getBudget().getStatus().name()));
+		}
+
+		@Test
+		void shouldReturnNotFoundWhenOrderDoesNotExist() throws Exception {
+			var externalId = UUID.randomUUID();
+
+			when(service.findByExternalId(externalId)).thenThrow(EntityNotFoundException.class);
+
+			mockMvc
+				.perform(get("/api/v1/service-orders/{id}/status", externalId))
+				.andExpect(status().isNotFound());
+		}
+	}
+
+	@Nested
+	class ProcessBudgetApprovalByEmail {
+
+		@Test
+		void shouldReturnApprovalHtmlPageWhenApproved() throws Exception {
+			String token = UUID.randomUUID().toString();
+			var serviceOrder = buildServiceOrder();
+
+			when(service.processBudgetResponseByToken(token, true)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(
+					get("/api/v1/service-orders/budget-approval")
+						.param("token", token)
+						.param("approved", "true")
+				)
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+				.andExpect(content().string(containsString("Orçamento Aprovado!")));
+		}
+
+		@Test
+		void shouldReturnRejectionHtmlPageWhenRejected() throws Exception {
+			String token = UUID.randomUUID().toString();
+			var serviceOrder = buildServiceOrder();
+
+			when(service.processBudgetResponseByToken(token, false)).thenReturn(serviceOrder);
+
+			mockMvc
+				.perform(
+					get("/api/v1/service-orders/budget-approval")
+						.param("token", token)
+						.param("approved", "false")
+				)
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+				.andExpect(content().string(containsString("Orçamento Recusado")));
+		}
+	}
 
 	@Nested
 	class FindById {
@@ -353,6 +453,35 @@ class ServiceOrderControllerTest {
 			assertThat(pageable.getPageSize()).isEqualTo(10);
 			assertThat(pageable.getSort().getOrderFor("createdAt")).isNotNull();
 			assertThat(pageable.getSort().getOrderFor("createdAt").isDescending()).isTrue();
+		}
+	}
+
+	@Nested
+	class GetMetrics {
+
+		@Test
+		void shouldReturnMetrics() throws Exception {
+			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(3.5, 10L));
+
+			mockMvc
+				.perform(get("/api/v1/service-orders/metrics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("success"))
+				.andExpect(jsonPath("$.data.averageCompletionDays").value(3.5))
+				.andExpect(jsonPath("$.data.totalCompletedOrders").value(10));
+		}
+
+		@Test
+		void shouldReturnNullAverageWhenNoOrdersFinished() throws Exception {
+			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(null, 0L));
+
+			mockMvc
+				.perform(get("/api/v1/service-orders/metrics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.data.averageCompletionDays").isEmpty())
+				.andExpect(jsonPath("$.data.totalCompletedOrders").value(0));
 		}
 	}
 
