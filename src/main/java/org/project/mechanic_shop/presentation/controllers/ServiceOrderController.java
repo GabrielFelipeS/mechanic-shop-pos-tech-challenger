@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStatusDto;
 import org.project.mechanic_shop.domain.dto.responses.ApiResponse;
@@ -24,13 +25,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/service-orders")
+@RequestMapping("/api/service-orders")
 @RequiredArgsConstructor
 @Tag(name = "Service Orders")
 @Slf4j
@@ -49,7 +51,7 @@ public class ServiceOrderController {
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Response processed")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Token invalid or already used")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Order is no longer pending approval")
-	@GetMapping(value = "/budget-approval", produces = MediaType.TEXT_HTML_VALUE)
+	@GetMapping(value = "/budget-approval", produces = "text/html;charset=UTF-8")
 	public ResponseEntity<String> processBudgetApprovalByEmail(
 		@RequestParam String token,
 		@RequestParam boolean approved
@@ -69,7 +71,8 @@ public class ServiceOrderController {
 			"<p style='font-size:18px'>" + msg + "</p>" +
 			"</body></html>";
 
-		return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+		MediaType htmlUtf8 = new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8);
+		return ResponseEntity.ok().contentType(htmlUtf8).body(html);
 	}
 
 	@Operation(summary = "List active service orders", description = "Returns a paginated list of active orders (excludes COMPLETED, DELIVERED and CANCELED). Fixed sort: IN_PROGRESS → PENDING_APPROVAL → DIAGNOSIS → RECEIVED, oldest first within each group.")
@@ -84,6 +87,16 @@ public class ServiceOrderController {
 		Page<ServiceOrder> orders = service.listActiveOrders(pageable);
 		var dto = orders.map(mapper::toShortDto);
 
+		return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
+	}
+
+	@Operation(summary = "Service order metrics", description = "Returns the average actual completion days across all finished service orders. Returns null when no orders have been completed yet.")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Metrics returned")
+	@GetMapping("/metrics")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC')")
+	public ResponseEntity<ApiResponse> getMetrics() {
+		log.info("Fetching service order metrics");
+		ServiceOrderMetricsDto dto = service.getMetrics();
 		return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), SUCCESS_MESSAGE, dto));
 	}
 

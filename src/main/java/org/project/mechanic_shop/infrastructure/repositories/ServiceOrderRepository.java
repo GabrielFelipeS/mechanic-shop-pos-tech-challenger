@@ -17,6 +17,12 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
 
 	Optional<ServiceOrder> findByApprovalToken(String approvalToken);
 
+	@Query("SELECT AVG(so.actualCompletionDays) FROM ServiceOrder so WHERE so.actualCompletionDays IS NOT NULL")
+	Double findAverageCompletionDays();
+
+	@Query("SELECT COUNT(so) FROM ServiceOrder so WHERE so.actualCompletionDays IS NOT NULL")
+	Long countCompletedOrders();
+
 	@Query(value = "SELECT so FROM ServiceOrder so " +
 				   "WHERE so.status NOT IN :excludedStatuses " +
 				   "ORDER BY " +
