@@ -1,6 +1,7 @@
 package org.project.mechanic_shop.application.services;
 
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
 import org.project.mechanic_shop.domain.entities.user.User;
@@ -30,4 +31,6 @@ public interface ServiceOrderService {
 	ServiceOrder processBudgetResponse(UUID externalId, boolean approved);
 
 	ServiceOrder processBudgetResponseByToken(String token, boolean approved);
+
+	ServiceOrderMetricsDto getMetrics();
 }

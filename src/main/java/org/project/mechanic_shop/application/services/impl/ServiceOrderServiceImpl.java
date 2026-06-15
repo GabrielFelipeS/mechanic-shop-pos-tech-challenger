@@ -15,6 +15,7 @@ import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
 import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
@@ -474,6 +475,15 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		);
 
 		return updatedOrder;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public ServiceOrderMetricsDto getMetrics() {
+		return new ServiceOrderMetricsDto(
+			serviceOrderRepository.findAverageCompletionDays(),
+			serviceOrderRepository.countCompletedOrders()
+		);
 	}
 
 	public void setEstimatedDeadline(ServiceOrder order) {

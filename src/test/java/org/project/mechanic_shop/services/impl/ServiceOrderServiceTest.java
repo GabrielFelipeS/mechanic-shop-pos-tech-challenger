@@ -31,6 +31,7 @@ import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
 import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
@@ -364,6 +365,125 @@ class ServiceOrderServiceTest {
 	}
 
 	@Nested
+	class ListActiveOrders {
+
+		@SuppressWarnings("unchecked")
+		@Test
+		void shouldCallRepositoryWithCorrectExclusionsAndStatusPriority() {
+			Pageable pageable = PageRequest.of(0, 10);
+			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(serviceOrder()));
+			ArgumentCaptor<List<ServiceOrderStatusEnum>> excludedCaptor =
+				(ArgumentCaptor<List<ServiceOrderStatusEnum>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
+
+			when(repository.findActiveOrders(
+				any(List.class),
+				eq(ServiceOrderStatusEnum.IN_PROGRESS),
+				eq(ServiceOrderStatusEnum.PENDING_APPROVAL),
+				eq(ServiceOrderStatusEnum.DIAGNOSIS),
+				eq(ServiceOrderStatusEnum.RECEIVED),
+				any(Pageable.class)
+			)).thenReturn(expectedPage);
+
+			var result = service.listActiveOrders(pageable);
+
+			assertThat(result).isSameAs(expectedPage);
+
+			verify(repository).findActiveOrders(
+				excludedCaptor.capture(),
+				eq(ServiceOrderStatusEnum.IN_PROGRESS),
+				eq(ServiceOrderStatusEnum.PENDING_APPROVAL),
+				eq(ServiceOrderStatusEnum.DIAGNOSIS),
+				eq(ServiceOrderStatusEnum.RECEIVED),
+				any(Pageable.class)
+			);
+
+			assertThat(excludedCaptor.getValue()).containsExactlyInAnyOrder(
+				ServiceOrderStatusEnum.COMPLETED,
+				ServiceOrderStatusEnum.DELIVERED,
+				ServiceOrderStatusEnum.CANCELED
+			);
+		}
+	}
+
+	@Nested
+	class ProcessBudgetResponseByToken {
+
+		@Test
+		void shouldApproveOrderWithdrawStockAndNullifyToken() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.setApprovalToken(token);
+			order.addStockItem(serviceOrderStockItem(stockItem(), 2, new BigDecimal("20.00")));
+			ArgumentCaptor<ServiceOrderStatusChangedEvent> eventCaptor = ArgumentCaptor.forClass(
+				ServiceOrderStatusChangedEvent.class
+			);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+
+			var updated = service.processBudgetResponseByToken(token, true);
+
+			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.APPROVED);
+			assertThat(updated.getApprovalToken()).isNull();
+			assertThat(updated.getApprovalDate()).isNotNull();
+
+			verify(stockItemService).withdrawStock(
+				order.getStockItems().getFirst().getStockItem().getExternalId(), 2
+			);
+
+			verify(eventPublisher).publishEvent(eventCaptor.capture());
+			assertThat(eventCaptor.getValue().oldStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			assertThat(eventCaptor.getValue().newStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+		}
+
+		@Test
+		void shouldCancelOrderAndNullifyTokenWhenRejected() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.setApprovalToken(token);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+
+			var updated = service.processBudgetResponseByToken(token, false);
+
+			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.CANCELED);
+			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.REJECTED);
+			assertThat(updated.getApprovalToken()).isNull();
+		}
+
+		@Test
+		void shouldThrowWhenTokenNotFound() {
+			when(repository.findByApprovalToken("invalid-token")).thenReturn(Optional.empty());
+
+			assertThatThrownBy(() -> service.processBudgetResponseByToken("invalid-token", true))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage("Token de aprovação inválido ou já utilizado.");
+		}
+
+		@Test
+		void shouldThrowWhenOrderIsNotPendingApproval() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+			order.setApprovalToken(token);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+
+			assertThatThrownBy(() -> service.processBudgetResponseByToken(token, true))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("IN_PROGRESS");
+
+			verify(repository, never()).save(any(ServiceOrder.class));
+		}
+	}
+
+	@Nested
 	class Search {
 
 		@SuppressWarnings("unchecked")
@@ -395,6 +515,32 @@ class ServiceOrderServiceTest {
 			assertThat(probe.getStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
 			assertThat(probe.getVehicle()).isNotNull();
 			assertThat(probe.getVehicle().getLicensePlate()).isEqualTo("ABC1234");
+		}
+	}
+
+	@Nested
+	class GetMetrics {
+
+		@Test
+		void shouldReturnAverageAndCountWhenOrdersExist() {
+			when(repository.findAverageCompletionDays()).thenReturn(3.5);
+			when(repository.countCompletedOrders()).thenReturn(10L);
+
+			ServiceOrderMetricsDto result = service.getMetrics();
+
+			assertThat(result.averageCompletionDays()).isEqualTo(3.5);
+			assertThat(result.totalCompletedOrders()).isEqualTo(10L);
+		}
+
+		@Test
+		void shouldReturnNullAverageAndZeroCountWhenNoOrdersFinished() {
+			when(repository.findAverageCompletionDays()).thenReturn(null);
+			when(repository.countCompletedOrders()).thenReturn(0L);
+
+			ServiceOrderMetricsDto result = service.getMetrics();
+
+			assertThat(result.averageCompletionDays()).isNull();
+			assertThat(result.totalCompletedOrders()).isZero();
 		}
 	}
 
