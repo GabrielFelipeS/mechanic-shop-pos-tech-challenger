@@ -167,6 +167,37 @@ class UserServiceTest {
 	}
 
 	@Nested
+	class FindByRoles {
+
+		@Test
+		void shouldReturnUsersMatchingGivenRoles() {
+			var buyer = UserHelper.generateUser();
+			buyer.setRole("BUYER");
+			var warehouse = UserHelper.generateUser();
+			warehouse.setRole("WAREHOUSE_CLERK");
+			List<String> roles = List.of("BUYER", "WAREHOUSE_CLERK");
+
+			when(userRepository.findByRoleIn(roles)).thenReturn(List.of(buyer, warehouse));
+
+			var result = userService.findByRoles(roles);
+
+			assertThat(result).containsExactlyInAnyOrder(buyer, warehouse);
+			verify(userRepository).findByRoleIn(roles);
+		}
+
+		@Test
+		void shouldReturnEmptyListWhenNoUsersMatchRoles() {
+			List<String> roles = List.of("BUYER");
+
+			when(userRepository.findByRoleIn(roles)).thenReturn(List.of());
+
+			var result = userService.findByRoles(roles);
+
+			assertThat(result).isEmpty();
+		}
+	}
+
+	@Nested
 	class Search {
 
 		@SuppressWarnings("unchecked")

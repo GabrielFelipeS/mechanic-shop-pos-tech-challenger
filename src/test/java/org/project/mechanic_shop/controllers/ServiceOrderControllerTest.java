@@ -96,7 +96,7 @@ class ServiceOrderControllerTest {
 			when(service.listActiveOrders(any(Pageable.class))).thenReturn(page);
 
 			mockMvc
-				.perform(get("/api/v1/service-orders"))
+				.perform(get("/api/service-orders"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.message").value("success"))
@@ -121,7 +121,7 @@ class ServiceOrderControllerTest {
 			when(service.findByExternalId(externalId)).thenReturn(serviceOrder);
 
 			mockMvc
-				.perform(get("/api/v1/service-orders/{id}/status", externalId))
+				.perform(get("/api/service-orders/{id}/status", externalId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.message").value("success"))
@@ -137,7 +137,7 @@ class ServiceOrderControllerTest {
 			when(service.findByExternalId(externalId)).thenThrow(EntityNotFoundException.class);
 
 			mockMvc
-				.perform(get("/api/v1/service-orders/{id}/status", externalId))
+				.perform(get("/api/service-orders/{id}/status", externalId))
 				.andExpect(status().isNotFound());
 		}
 	}
@@ -154,7 +154,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					get("/api/v1/service-orders/budget-approval")
+					get("/api/service-orders/budget-approval")
 						.param("token", token)
 						.param("approved", "true")
 				)
@@ -172,7 +172,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					get("/api/v1/service-orders/budget-approval")
+					get("/api/service-orders/budget-approval")
 						.param("token", token)
 						.param("approved", "false")
 				)
@@ -193,7 +193,7 @@ class ServiceOrderControllerTest {
 			when(service.findByExternalId(externalId)).thenReturn(serviceOrder);
 
 			mockMvc
-				.perform(get("/api/v1/service-orders/{id}", externalId))
+				.perform(get("/api/service-orders/{id}", externalId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.message").value("success"))
@@ -215,7 +215,7 @@ class ServiceOrderControllerTest {
 
 			when(service.findByExternalId(externalId)).thenThrow(EntityNotFoundException.class);
 
-			mockMvc.perform(get("/api/v1/service-orders/{id}", externalId)).andExpect(status().isNotFound());
+			mockMvc.perform(get("/api/service-orders/{id}", externalId)).andExpect(status().isNotFound());
 		}
 	}
 
@@ -234,7 +234,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					post("/api/v1/service-orders/create")
+					post("/api/service-orders/create")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(dto))
 				)
@@ -252,7 +252,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					post("/api/v1/service-orders/create")
+					post("/api/service-orders/create")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(dto))
 				)
@@ -277,7 +277,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					put("/api/v1/service-orders/{id}/quote", externalId)
+					put("/api/service-orders/{id}/quote", externalId)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(dto))
 				)
@@ -299,7 +299,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					put("/api/v1/service-orders/{id}/quote", externalId)
+					put("/api/service-orders/{id}/quote", externalId)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(dto))
 				)
@@ -322,7 +322,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					post("/api/v1/service-orders/{id}/request-approval", externalId).contentType(
+					post("/api/service-orders/{id}/request-approval", externalId).contentType(
 						MediaType.APPLICATION_JSON
 					)
 				)
@@ -350,7 +350,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					post("/api/v1/service-orders/{id}/budget-response", externalId)
+					post("/api/service-orders/{id}/budget-response", externalId)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(dto))
 				)
@@ -386,7 +386,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					get("/api/v1/service-orders/search")
+					get("/api/service-orders/search")
 						.param("licensePlate", serviceOrder.getVehicle().getLicensePlate())
 						.param("status", serviceOrder.getStatus().name())
 						.param("page", "0")
@@ -429,7 +429,7 @@ class ServiceOrderControllerTest {
 
 			mockMvc
 				.perform(
-					get("/api/v1/service-orders/search").param(
+					get("/api/service-orders/search").param(
 						"licensePlate",
 						serviceOrder.getVehicle().getLicensePlate()
 					)
@@ -464,7 +464,7 @@ class ServiceOrderControllerTest {
 			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(3.5, 10L));
 
 			mockMvc
-				.perform(get("/api/v1/service-orders/metrics"))
+				.perform(get("/api/service-orders/metrics"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.message").value("success"))
@@ -477,7 +477,7 @@ class ServiceOrderControllerTest {
 			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(null, 0L));
 
 			mockMvc
-				.perform(get("/api/v1/service-orders/metrics"))
+				.perform(get("/api/service-orders/metrics"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.data.averageCompletionDays").isEmpty())
