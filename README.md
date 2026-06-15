@@ -78,15 +78,20 @@ Abaixo está o mapeamento de quais perfis podem acessar cada rota da API. Lembre
 * `PUT /{id}`: `WAREHOUSE_CLERK`, `MECHANIC`
 * `GET /{id}` e `/search`: `WAREHOUSE_CLERK`, `RECEPTIONIST`, `MECHANIC`
 
-### 6. Ordem de Serviço (Máquina de Estados) (`/api/v1/service-orders`)
+### 6. Ordem de Serviço (Máquina de Estados) (`/api/service-orders`)
 O ciclo de vida da OS é protegido rigorosamente por perfil funcional:
 * **Criar OS** (`POST /create`): `RECEPTIONIST`
 * **Orçar/Diagnóstico** (`PUT /{id}/quote`): `MECHANIC`
 * **Solicitar Aprovação** (`POST /{id}/request-approval`): `MECHANIC`
-* **Aprovar Orçamento** (`POST /{id}/budget-response`): `CUSTOMER` (Cliente)
+* **Aprovar Orçamento** (`POST /{id}/budget-response`): `CUSTOMER`
+* **Aprovar Orçamento via E-mail** (`GET /budget-approval?token=&approved=`): público (link enviado ao cliente por e-mail)
 * **Finalizar Serviço** (`POST /{id}/finish`): `MECHANIC`
 * **Entregar Veículo** (`POST /{id}/deliver`): `RECEPTIONIST`
-* **Visualizar OS** (`GET /{id}` e `/search`): `RECEPTIONIST`, `MECHANIC`, `SALESPERSON`, `CUSTOMER`
+* **Listar OS Ativas** (`GET /`): `RECEPTIONIST`, `MECHANIC` — ordenação por prioridade, exclui finalizadas e entregues
+* **Consultar Status** (`GET /{id}/status`): `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
+* **Visualizar OS Completa** (`GET /{id}`): `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
+* **Buscar OS** (`GET /search`): `RECEPTIONIST`, `MECHANIC`, `SALESPERSON`, `CUSTOMER`
+* **Métricas** (`GET /metrics`): `RECEPTIONIST`, `MECHANIC`
 
 ---
 
@@ -184,7 +189,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 ### 5. Ordens de Serviço (Máquina de Estados)
 
 **A. Abertura de OS (`RECEIVED`)**
-* **Endpoint:** `POST /api/v1/service-orders/create`
+* **Endpoint:** `POST /api/service-orders/create`
 * **Permissão:** `ADMIN`, `RECEPTIONIST`
 ```json
 {
@@ -196,7 +201,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 ```
 
 **B. Inclusão de Orçamento (`DIAGNOSIS`)**
-* **Endpoint:** `PUT /api/v1/service-orders/{id}/quote`
+* **Endpoint:** `PUT /api/service-orders/{id}/quote`
 * **Permissão:** `ADMIN`, `MECHANIC`
 ```json
 {
@@ -217,10 +222,62 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
 ```
 
 **C. Resposta do Cliente (`IN_PROGRESS` ou `CANCELED`)**
-* **Endpoint:** `POST /api/v1/service-orders/{id}/budget-response`
+* **Endpoint:** `POST /api/service-orders/{id}/budget-response`
 * **Permissão:** `ADMIN`, `CUSTOMER`
 ```json
 {
   "approved": true
 }
 ```
+
+**D. Consulta de Status da OS**
+* **Endpoint:** `GET /api/service-orders/{id}/status`
+* **Permissão:** `ADMIN`, `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
+
+Retorna apenas os campos de status — leve, sem detalhes de peças e mão de obra:
+```json
+{
+  "status": 200,
+  "message": "success",
+  "data": {
+    "externalId": "UUID_DA_OS",
+    "status": "IN_PROGRESS",
+    "budgetStatus": "APPROVED",
+    "estimatedCompletionDate": "2025-06-18T10:00:00",
+    "estimatedCompletionDays": 3
+  }
+}
+```
+
+Valores possíveis para `status`: `RECEIVED`, `DIAGNOSIS`, `PENDING_APPROVAL`, `IN_PROGRESS`, `COMPLETED`, `DELIVERED`, `CANCELED`.
+
+**E. Aprovação de Orçamento via E-mail**
+* **Endpoint:** `GET /api/service-orders/budget-approval?token={token}&approved={true|false}`
+* **Permissão:** público — sem autenticação (link enviado ao cliente por e-mail)
+
+O cliente recebe um e-mail com dois links (aprovar/recusar). Ao clicar, o sistema atualiza o status da OS automaticamente e exibe uma página HTML de confirmação. O token é de uso único e invalidado após o clique.
+
+**F. Listagem de OS Ativas (com ordenação por prioridade)**
+* **Endpoint:** `GET /api/service-orders`
+* **Permissão:** `ADMIN`, `RECEPTIONIST`, `MECHANIC`
+
+Retorna paginação com ordenação fixa por prioridade operacional:
+`IN_PROGRESS → PENDING_APPROVAL → DIAGNOSIS → RECEIVED` (mais antigas primeiro dentro de cada grupo).
+OS com status `COMPLETED`, `DELIVERED` e `CANCELED` são excluídas automaticamente.
+
+**G. Métricas de Ordens de Serviço**
+* **Endpoint:** `GET /api/service-orders/metrics`
+* **Permissão:** `ADMIN`, `RECEPTIONIST`, `MECHANIC`
+
+Retorna o tempo médio real de execução (em dias) calculado sobre todas as OS finalizadas, além da quantidade de OS utilizadas no cálculo:
+```json
+{
+  "status": 200,
+  "message": "success",
+  "data": {
+    "averageCompletionDays": 3.5,
+    "totalCompletedOrders": 10
+  }
+}
+```
+`averageCompletionDays` retorna `null` quando nenhuma OS foi finalizada ainda. O cálculo é baseado no campo `actualCompletionDays`, que registra os dias reais entre a aprovação do orçamento e a conclusão do serviço.
