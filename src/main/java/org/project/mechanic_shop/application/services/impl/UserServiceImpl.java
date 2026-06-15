@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -68,6 +69,12 @@ public class UserServiceImpl implements UserService {
 		Example<User> example = Example.of(user, matcher);
 
 		return repository.findAll(example, pageable);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<User> findByRoles(List<String> roles) {
+		return repository.findByRoleIn(roles);
 	}
 
 	@Override

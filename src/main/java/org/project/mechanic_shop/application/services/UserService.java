@@ -1,5 +1,6 @@
 package org.project.mechanic_shop.application.services;
 
+import java.util.List;
 import java.util.UUID;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,8 @@ public interface UserService {
 	User findByExternalId(UUID externalId);
 
 	Page<User> search(String document, String name, String email, String role, Pageable pageable);
+
+	List<User> findByRoles(List<String> roles);
 
 	User update(UUID id, User update);
 }
