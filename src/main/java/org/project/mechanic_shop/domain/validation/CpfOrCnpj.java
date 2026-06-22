@@ -1,4 +1,4 @@
-package org.project.mechanic_shop.application.validators.validation;
+package org.project.mechanic_shop.domain.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
