@@ -5,13 +5,11 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.domain.events.OutOfStockEvent;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
 import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
-import org.project.mechanic_shop.infrastructure.repositories.StockItemRepository;
 import org.project.mechanic_shop.application.services.StockItemService;
 import org.project.mechanic_shop.application.validators.StockItemValidator;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class StockItemServiceImpl implements StockItemService {
 
-	private final StockItemRepository repository;
+	private final StockItemRepositoryPort repository;
 	private final StockItemValidator validator;
 	private final ApplicationEventPublisher eventPublisher;
 
@@ -49,30 +47,7 @@ public class StockItemServiceImpl implements StockItemService {
 	public Page<StockItem> search(String code, String name, Pageable pageable) {
 		log.info("Searching parts with filters - code: {}, name: {}", code, name);
 
-		var part = new StockItem();
-		part.setCode(code);
-		part.setName(name);
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths(
-				"id",
-				"externalId",
-				"description",
-				"quantity",
-				"costPrice",
-				"salePrice",
-				"createdAt",
-				"createdFor",
-				"lastUpdatedAt",
-				"lastUpdatedFor"
-			)
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		Example<StockItem> example = Example.of(part, matcher);
-
-		return repository.findAll(example, pageable);
+		return repository.search(code, name, pageable);
 	}
 
 	@Override

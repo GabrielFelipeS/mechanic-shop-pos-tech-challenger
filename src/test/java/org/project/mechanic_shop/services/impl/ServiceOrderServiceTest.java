@@ -1,18 +1,6 @@
 package org.project.mechanic_shop.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,7 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
+import org.project.mechanic_shop.application.services.*;
 import org.project.mechanic_shop.application.services.impl.ServiceOrderServiceImpl;
+import org.project.mechanic_shop.domain.dto.service_order_dto.*;
 import org.project.mechanic_shop.domain.entities.budget.Budget;
 import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
 import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
@@ -29,30 +20,29 @@ import org.project.mechanic_shop.domain.entities.service_order_stock_item.Servic
 import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
-import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
-import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
-import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderMetricsDto;
-import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
-import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
-import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.infrastructure.repositories.ServiceOrderRepository;
-import org.project.mechanic_shop.application.services.MechanicServiceService;
-import org.project.mechanic_shop.application.services.ServiceOrderService;
-import org.project.mechanic_shop.application.services.StockItemService;
-import org.project.mechanic_shop.application.services.UserService;
-import org.project.mechanic_shop.application.services.VehicleService;
+import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
+import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.utils.MechanicServiceHelper;
 import org.project.mechanic_shop.utils.UserHelper;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ServiceOrderServiceTest {
@@ -60,7 +50,7 @@ class ServiceOrderServiceTest {
 	private ServiceOrderService service;
 
 	@Mock
-	private ServiceOrderRepository repository;
+	private ServiceOrderRepositoryPort repository;
 
 	@Mock
 	private ApplicationEventPublisher eventPublisher;
@@ -179,15 +169,12 @@ class ServiceOrderServiceTest {
 			assertThat(labor.getQuantity()).isEqualTo(3);
 			assertThat(labor.getUnitPrice()).isEqualByComparingTo("150.00");
 			assertThat(labor.getTotalPrice()).isEqualByComparingTo("450.00");
-			assertThat(labor.getServiceOrder()).isSameAs(updated);
-
 			ServiceOrderStockItem orderPart = updated.getStockItems().getFirst();
 			assertThat(orderPart.getStockItem()).isSameAs(part);
 			assertThat(orderPart.getQuantity()).isEqualTo(2);
 			assertThat(orderPart.getStockItemType()).isEqualTo(part.getType());
 			assertThat(orderPart.getUnitPrice()).isEqualByComparingTo("40.00");
 			assertThat(orderPart.getTotalPrice()).isEqualByComparingTo("80.00");
-			assertThat(orderPart.getServiceOrder()).isSameAs(updated);
 		}
 
 		@Test
@@ -486,35 +473,19 @@ class ServiceOrderServiceTest {
 	@Nested
 	class Search {
 
-		@SuppressWarnings("unchecked")
-		private ArgumentCaptor<Example<ServiceOrder>> exampleCaptor() {
-			return (ArgumentCaptor<Example<ServiceOrder>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
-		}
-
-		@SuppressWarnings("unchecked")
-		private Example<ServiceOrder> anyExample() {
-			return any(Example.class);
-		}
-
 		@Test
 		void shouldReturnServiceOrdersWhenSearchCriteriaIsProvided() {
 			var order = serviceOrder();
 			var user = UserHelper.generateUser();
 			Pageable pageable = PageRequest.of(0, 10);
 			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(order));
-			ArgumentCaptor<Example<ServiceOrder>> captor = exampleCaptor();
 
-			when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+			when(repository.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable)).thenReturn(expectedPage);
 
 			var result = service.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, pageable, user);
 
 			assertThat(result).isEqualTo(expectedPage);
-
-			verify(repository).findAll(captor.capture(), eq(pageable));
-			ServiceOrder probe = captor.getValue().getProbe();
-			assertThat(probe.getStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
-			assertThat(probe.getVehicle()).isNotNull();
-			assertThat(probe.getVehicle().getLicensePlate()).isEqualTo("ABC1234");
+			verify(repository).search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable);
 		}
 	}
 

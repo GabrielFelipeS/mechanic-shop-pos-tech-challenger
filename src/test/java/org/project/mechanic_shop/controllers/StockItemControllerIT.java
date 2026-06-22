@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.project.mechanic_shop.domain.dto.stock_item_dto.StockItemManDto;
 import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
 import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.infrastructure.repositories.StockItemRepository;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,7 +37,7 @@ class StockItemControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private StockItemRepository stockItemRepository;
+	private StockItemRepositoryPort stockItemRepository;
 
 	@Test
 	void shouldCreateStockItemAndPersistIt() throws Exception {

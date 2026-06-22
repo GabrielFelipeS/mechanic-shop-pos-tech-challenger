@@ -4,12 +4,10 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.mechanic_shop.application.ports.MechanicServiceRepositoryPort;
 import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
-import org.project.mechanic_shop.infrastructure.repositories.MechanicServiceRepository;
 import org.project.mechanic_shop.application.services.MechanicServiceService;
 import org.project.mechanic_shop.application.validators.MechanicServiceValidator;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class MechanicServiceServiceImpl implements MechanicServiceService {
 
-	private final MechanicServiceRepository repository;
+	private final MechanicServiceRepositoryPort repository;
 	private final MechanicServiceValidator validator;
 
 	@Override
@@ -47,25 +45,7 @@ public class MechanicServiceServiceImpl implements MechanicServiceService {
 	public Page<MechanicService> search(String name, Pageable pageable) {
 		log.info("Searching mechanic services with filters - name: {}", name);
 
-		var service = new MechanicService();
-		service.setName(name);
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths(
-				"id",
-				"externalId",
-				"estimatedTimeMinutes",
-				"price",
-				"createdAt",
-				"createdFor",
-				"lastUpdatedAt",
-				"lastUpdatedFor"
-			)
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		return repository.findAll(Example.of(service, matcher), pageable);
+		return repository.search(name, pageable);
 	}
 
 	@Override

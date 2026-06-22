@@ -2,15 +2,15 @@ package org.project.mechanic_shop.application.validators;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
 import org.project.mechanic_shop.domain.entities.user.User;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class UserValidator {
 
-	private final UserRepository repository;
+	private final UserRepositoryPort repository;
 
 	public void validate(User user) {
 		if (existsUserByDocument(user)) {

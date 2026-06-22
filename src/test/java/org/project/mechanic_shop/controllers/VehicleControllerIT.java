@@ -14,8 +14,8 @@ import org.project.mechanic_shop.domain.dto.vehicle_dto.VehicleManDto;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
-import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,10 +38,10 @@ class VehicleControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private VehicleRepository vehicleRepository;
+	private VehicleRepositoryPort vehicleRepository;
 
 	@Autowired
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Test
 	void shouldCreateVehicleAndPersistIt() throws Exception {

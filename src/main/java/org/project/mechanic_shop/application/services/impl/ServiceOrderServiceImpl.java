@@ -22,11 +22,9 @@ import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.infrastructure.repositories.ServiceOrderRepository;
+import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,7 +43,7 @@ import java.util.UUID;
 @Slf4j
 public class ServiceOrderServiceImpl implements ServiceOrderService {
 
-	private final ServiceOrderRepository serviceOrderRepository;
+	private final ServiceOrderRepositoryPort serviceOrderRepository;
 	private final ApplicationEventPublisher eventPublisher;
 	private final VehicleService vehicleService;
 	private final UserService userService;
@@ -387,32 +385,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 	) {
 		log.info("Searching service orders with filters - licensePlate: {}, status: {}", licensePlate, status);
 
-		ServiceOrder probe = new ServiceOrder();
-		probe.setStatus(status);
-		probe.setResponsibleMechanic(mechanic);
-
-		if (licensePlate != null && !licensePlate.isBlank()) {
-			Vehicle vehicleProbe = new Vehicle();
-			vehicleProbe.setLicensePlate(licensePlate);
-			probe.setVehicle(vehicleProbe);
-		}
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths(
-				"id",
-				"externalId",
-				"odometerReading",
-				"totalAmount",
-				"createdAt",
-				"createdFor",
-				"lastUpdatedAt",
-				"lastUpdatedFor"
-			)
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		return serviceOrderRepository.findAll(Example.of(probe, matcher), pageable);
+		return serviceOrderRepository.search(licensePlate, status, mechanic, pageable);
 	}
 
 	@Override

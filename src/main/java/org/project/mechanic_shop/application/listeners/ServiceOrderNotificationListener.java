@@ -6,7 +6,7 @@ import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
 import org.project.mechanic_shop.domain.entities.user.User;
-import org.project.mechanic_shop.infrastructure.http.EmailService;
+import org.project.mechanic_shop.application.ports.EmailService;
 import org.project.mechanic_shop.application.services.ServiceOrderService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;

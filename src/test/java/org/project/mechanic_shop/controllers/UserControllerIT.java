@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.project.mechanic_shop.domain.dto.user_dto.UserManDto;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +38,7 @@ class UserControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Test
 	void shouldCreateUserAndPersistIt() throws Exception {
