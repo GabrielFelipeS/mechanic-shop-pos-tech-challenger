@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.project.mechanic_shop.application.validators.validation.CpfOrCnpj;
+import org.project.mechanic_shop.domain.validation.CpfOrCnpj;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
 
 import java.io.Serializable;
