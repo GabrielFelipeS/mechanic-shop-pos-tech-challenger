@@ -3,7 +3,7 @@ package org.project.mechanic_shop.shared.config.system;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.domain.entities.user.User;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class SystemBootstrapper {
 
-	private final UserRepository userRepository;
+	private final UserRepositoryPort userRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Value("${app.seed.password}")

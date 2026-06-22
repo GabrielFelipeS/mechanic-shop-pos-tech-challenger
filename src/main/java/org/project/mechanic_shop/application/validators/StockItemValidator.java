@@ -2,15 +2,15 @@ package org.project.mechanic_shop.application.validators;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
 import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
-import org.project.mechanic_shop.infrastructure.repositories.StockItemRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class StockItemValidator {
 
-	private final StockItemRepository repository;
+	private final StockItemRepositoryPort repository;
 
 	public void validate(StockItem stockItem) {
 		if (existsByCode(stockItem)) {

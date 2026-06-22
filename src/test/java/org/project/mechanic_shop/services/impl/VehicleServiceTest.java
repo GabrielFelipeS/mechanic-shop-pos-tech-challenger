@@ -1,40 +1,34 @@
 package org.project.mechanic_shop.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
+import org.project.mechanic_shop.application.services.VehicleService;
 import org.project.mechanic_shop.application.services.impl.VehicleServiceImpl;
+import org.project.mechanic_shop.application.validators.VehicleValidator;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
-import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
-import org.project.mechanic_shop.application.services.VehicleService;
 import org.project.mechanic_shop.utils.UserHelper;
-import org.project.mechanic_shop.application.validators.VehicleValidator;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
@@ -42,10 +36,10 @@ class VehicleServiceTest {
 	private VehicleService service;
 
 	@Mock
-	private VehicleRepository repository;
+	private VehicleRepositoryPort repository;
 
 	@Mock
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Mock
 	private VehicleValidator validator;
@@ -122,57 +116,32 @@ class VehicleServiceTest {
 	@Nested
 	class Search {
 
-		@SuppressWarnings("unchecked")
-		private ArgumentCaptor<Example<Vehicle>> exampleCaptor() {
-			return (ArgumentCaptor<Example<Vehicle>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
-		}
-
-		@SuppressWarnings("unchecked")
-		private Example<Vehicle> anyExample() {
-			return any(Example.class);
-		}
-
 		@Test
 		void shouldReturnEmptyPageWhenOwnerFilterDoesNotExist() {
 			UUID ownerId = UUID.randomUUID();
 			Pageable pageable = PageRequest.of(0, 10);
 
-			when(userRepository.findByExternalId(ownerId)).thenReturn(Optional.empty());
+			when(repository.search("ABC1234", "Ford", "Ka", ownerId, pageable)).thenReturn(Page.empty(pageable));
 
 			var result = service.search("ABC1234", "Ford", "Ka", ownerId, pageable);
 
 			assertThat(result).isEmpty();
-			verify(repository, never()).findAll(anyExample(), eq(pageable));
 		}
 
 		@Test
 		void shouldReturnVehiclesWhenSearchCriteriaIsProvided() {
 			UUID ownerId = UUID.randomUUID();
-			var owner = UserHelper.generateUser();
 			var vehicle = vehicle();
 			Pageable pageable = PageRequest.of(0, 10);
 			Page<Vehicle> expectedPage = new PageImpl<>(List.of(vehicle));
-			ArgumentCaptor<Example<Vehicle>> captor = exampleCaptor();
 
-			when(userRepository.findByExternalId(ownerId)).thenReturn(Optional.of(owner));
-			when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+			when(repository.search(vehicle.getLicensePlate(), vehicle.getBrand(), vehicle.getModel(), ownerId, pageable))
+				.thenReturn(expectedPage);
 
-			var result = service.search(
-				vehicle.getLicensePlate(),
-				vehicle.getBrand(),
-				vehicle.getModel(),
-				ownerId,
-				pageable
-			);
+			var result = service.search(vehicle.getLicensePlate(), vehicle.getBrand(), vehicle.getModel(), ownerId, pageable);
 
 			assertThat(result).isEqualTo(expectedPage);
-
-			verify(repository).findAll(captor.capture(), eq(pageable));
-			Vehicle probe = captor.getValue().getProbe();
-			assertThat(probe.getLicensePlate()).isEqualTo(vehicle.getLicensePlate());
-			assertThat(probe.getBrand()).isEqualTo(vehicle.getBrand());
-			assertThat(probe.getModel()).isEqualTo(vehicle.getModel());
-			assertThat(probe.getOwner()).isSameAs(owner);
+			verify(repository).search(vehicle.getLicensePlate(), vehicle.getBrand(), vehicle.getModel(), ownerId, pageable);
 		}
 	}
 

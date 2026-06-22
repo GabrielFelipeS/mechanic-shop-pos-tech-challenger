@@ -3,12 +3,10 @@ package org.project.mechanic_shop.application.services.impl;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
 import org.project.mechanic_shop.domain.entities.user.User;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
 import org.project.mechanic_shop.application.services.UserService;
 import org.project.mechanic_shop.application.validators.UserValidator;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +21,7 @@ import java.util.UUID;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-	private final UserRepository repository;
+	private final UserRepositoryPort repository;
 	private final UserValidator validator;
 	private final PasswordEncoder passwordEncoder;
 
@@ -54,21 +52,7 @@ public class UserServiceImpl implements UserService {
 	public Page<User> search(String document, String name, String email, String role, Pageable pageable) {
 		log.info("Searching Users with filters - document: {}, name: {}, email: {}", document, name, email);
 
-		var user = new User();
-		user.setDocument(document);
-		user.setName(name);
-		user.setEmail(email);
-		user.setRole(role);
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths("id", "externalId", "phone", "createdAt", "createdFor", "lastUpdatedAt", "lastUpdatedFor")
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		Example<User> example = Example.of(user, matcher);
-
-		return repository.findAll(example, pageable);
+		return repository.search(document, name, email, role, pageable);
 	}
 
 	@Override

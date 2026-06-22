@@ -1,20 +1,6 @@
 package org.project.mechanic_shop.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,17 +9,23 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.application.services.impl.MechanicServiceServiceImpl;
-import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
-import org.project.mechanic_shop.infrastructure.repositories.MechanicServiceRepository;
+import org.project.mechanic_shop.application.ports.MechanicServiceRepositoryPort;
 import org.project.mechanic_shop.application.services.MechanicServiceService;
-import org.project.mechanic_shop.utils.MechanicServiceHelper;
+import org.project.mechanic_shop.application.services.impl.MechanicServiceServiceImpl;
 import org.project.mechanic_shop.application.validators.MechanicServiceValidator;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.utils.MechanicServiceHelper;
+import org.springframework.data.domain.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MechanicServiceServiceTest {
@@ -41,7 +33,7 @@ class MechanicServiceServiceTest {
 	private MechanicServiceService service;
 
 	@Mock
-	private MechanicServiceRepository repository;
+	private MechanicServiceRepositoryPort repository;
 
 	@Mock
 	private MechanicServiceValidator validator;
@@ -179,26 +171,18 @@ class MechanicServiceServiceTest {
 			);
 		}
 
-		@SuppressWarnings("unchecked")
-		private Example<MechanicService> anyExample() {
-			return any(Example.class);
-		}
-
 		@Test
 		void shouldReturnMechanicServicesWhenSearchCriteriaIsProvided() {
 			var mechanicService = MechanicServiceHelper.generateMechanicService();
 			Pageable pageable = PageRequest.of(0, 10);
 			Page<MechanicService> expectedPage = new PageImpl<>(List.of(mechanicService));
-			ArgumentCaptor<Example<MechanicService>> captor = exampleCaptor();
 
-			when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+			when(repository.search(mechanicService.getName(), pageable)).thenReturn(expectedPage);
 
 			var result = service.search(mechanicService.getName(), pageable);
 
 			assertThat(result).isEqualTo(expectedPage);
-
-			verify(repository).findAll(captor.capture(), eq(pageable));
-			assertThat(captor.getValue().getProbe().getName()).isEqualTo(mechanicService.getName());
+			verify(repository).search(mechanicService.getName(), pageable);
 		}
 	}
 }

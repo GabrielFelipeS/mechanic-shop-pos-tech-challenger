@@ -2,7 +2,7 @@ package org.project.mechanic_shop.infrastructure.http.impl;
 
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-import org.project.mechanic_shop.infrastructure.http.EmailService;
+import org.project.mechanic_shop.application.ports.EmailService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 

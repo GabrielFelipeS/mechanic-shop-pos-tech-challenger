@@ -29,11 +29,11 @@ import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
 import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
-import org.project.mechanic_shop.infrastructure.repositories.MechanicServiceRepository;
-import org.project.mechanic_shop.infrastructure.repositories.ServiceOrderRepository;
-import org.project.mechanic_shop.infrastructure.repositories.StockItemRepository;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
-import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
+import org.project.mechanic_shop.application.ports.MechanicServiceRepositoryPort;
+import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,19 +56,19 @@ class ServiceOrderControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private ServiceOrderRepository serviceOrderRepository;
+	private ServiceOrderRepositoryPort serviceOrderRepository;
 
 	@Autowired
-	private VehicleRepository vehicleRepository;
+	private VehicleRepositoryPort vehicleRepository;
 
 	@Autowired
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Autowired
-	private StockItemRepository stockItemRepository;
+	private StockItemRepositoryPort stockItemRepository;
 
 	@Autowired
-	private MechanicServiceRepository mechanicServiceRepository;
+	private MechanicServiceRepositoryPort mechanicServiceRepository;
 
 	@Test
 	void shouldCreateServiceOrderAndPersistIt() throws Exception {

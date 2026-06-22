@@ -2,15 +2,15 @@ package org.project.mechanic_shop.application.validators;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.project.mechanic_shop.application.ports.MechanicServiceRepositoryPort;
 import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
-import org.project.mechanic_shop.infrastructure.repositories.MechanicServiceRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class MechanicServiceValidator {
 
-	private final MechanicServiceRepository repository;
+	private final MechanicServiceRepositoryPort repository;
 
 	public void validate(MechanicService service) {
 		if (existsByName(service)) {
