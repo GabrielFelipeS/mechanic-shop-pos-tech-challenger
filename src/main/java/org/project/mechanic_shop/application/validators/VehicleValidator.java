@@ -2,15 +2,15 @@ package org.project.mechanic_shop.application.validators;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
-import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class VehicleValidator {
 
-	private final VehicleRepository repository;
+	private final VehicleRepositoryPort repository;
 
 	public void validate(Vehicle vehicle) {
 		if (existsVehicleByLicensePlate(vehicle)) {

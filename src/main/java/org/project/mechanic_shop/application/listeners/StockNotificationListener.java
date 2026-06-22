@@ -7,7 +7,7 @@ import org.project.mechanic_shop.application.services.UserService;
 import org.project.mechanic_shop.domain.events.OutOfStockEvent;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
-import org.project.mechanic_shop.infrastructure.http.EmailService;
+import org.project.mechanic_shop.application.ports.EmailService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

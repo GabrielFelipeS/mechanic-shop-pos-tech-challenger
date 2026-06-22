@@ -4,13 +4,11 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
-import org.project.mechanic_shop.infrastructure.repositories.UserRepository;
-import org.project.mechanic_shop.infrastructure.repositories.VehicleRepository;
 import org.project.mechanic_shop.application.services.VehicleService;
 import org.project.mechanic_shop.application.validators.VehicleValidator;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class VehicleServiceImpl implements VehicleService {
 
-	private final VehicleRepository repository;
-	private final UserRepository userRepository;
+	private final VehicleRepositoryPort repository;
+	private final UserRepositoryPort userRepository;
 	private final VehicleValidator validator;
 
 	@Override
@@ -62,37 +60,7 @@ public class VehicleServiceImpl implements VehicleService {
 			ownerId
 		);
 
-		var vehicle = new Vehicle();
-		vehicle.setLicensePlate(licensePlate);
-		vehicle.setBrand(brand);
-		vehicle.setModel(model);
-
-		if (ownerId != null) {
-			var ownerOpt = userRepository.findByExternalId(ownerId);
-			if (ownerOpt.isEmpty()) {
-				return Page.empty(pageable);
-			}
-			vehicle.setOwner(ownerOpt.get());
-		}
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths(
-				"id",
-				"externalId",
-				"year",
-				"color",
-				"createdAt",
-				"createdFor",
-				"lastUpdatedAt",
-				"lastUpdatedFor"
-			)
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		Example<Vehicle> example = Example.of(vehicle, matcher);
-
-		return repository.findAll(example, pageable);
+		return repository.search(licensePlate, brand, model, ownerId, pageable);
 	}
 
 	@Override

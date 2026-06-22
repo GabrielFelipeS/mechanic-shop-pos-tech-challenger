@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.infrastructure.http.EmailService;
+import org.project.mechanic_shop.application.ports.EmailService;
 import org.project.mechanic_shop.infrastructure.http.impl.SmtpEmailServiceImpl;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
