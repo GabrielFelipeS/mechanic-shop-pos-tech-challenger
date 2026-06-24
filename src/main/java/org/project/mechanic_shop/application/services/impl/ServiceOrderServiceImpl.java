@@ -35,6 +35,7 @@ import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -286,7 +287,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 				stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
 			}
 
-			order.setApprovalDate(LocalDateTime.now());
+			order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
 		} else {
 			order.getBudget().setStatus(BudgetStatusEnum.REJECTED);
@@ -434,7 +435,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			for (ServiceOrderStockItem item : order.getStockItems()) {
 				stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
 			}
-			order.setApprovalDate(LocalDateTime.now());
+			order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
 		} else {
 			order.getBudget().setStatus(BudgetStatusEnum.REJECTED);
@@ -475,12 +476,12 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		int totalEstimatedDays = baseDays + (isPartMissing ? 3 : 0);
 
 		order.setEstimatedCompletionDays(totalEstimatedDays);
-		order.setEstimatedCompletionDate(LocalDateTime.now().plusDays(totalEstimatedDays));
-		order.setApprovalDate(LocalDateTime.now());
+		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(totalEstimatedDays));
+		order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 	}
 
 	public void recordActualFinish(ServiceOrder order) {
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
 		order.setActualCompletionDate(now);
 
 		long daysTaken = ChronoUnit.DAYS.between(order.getApprovalDate(), now);
