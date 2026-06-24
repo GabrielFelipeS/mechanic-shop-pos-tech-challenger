@@ -5,6 +5,7 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,7 +37,7 @@ public abstract class BaseAuditJpaEntity {
 		if (this.externalId == null) {
 			this.externalId = UUID.randomUUID();
 		}
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
 		this.createdAt = now;
 		this.lastUpdatedAt = now;
 		String auditor = resolveCurrentAuditor();
@@ -46,7 +47,7 @@ public abstract class BaseAuditJpaEntity {
 
 	@PreUpdate
 	protected void onUpdate() {
-		this.lastUpdatedAt = LocalDateTime.now();
+		this.lastUpdatedAt = LocalDateTime.now(ZoneId.systemDefault());
 		this.lastUpdatedFor = resolveCurrentAuditor();
 	}
 
