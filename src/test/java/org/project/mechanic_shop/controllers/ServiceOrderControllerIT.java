@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.project.mechanic_shop.config.AbstractIntegrationTest;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
 import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
@@ -36,19 +37,11 @@ import org.project.mechanic_shop.application.ports.UserRepositoryPort;
 import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
-@ActiveProfiles("test")
-@Transactional
-@SpringBootTest
-@AutoConfigureMockMvc
-class ServiceOrderControllerIT {
+class ServiceOrderControllerIT extends AbstractIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -91,7 +84,7 @@ class ServiceOrderControllerIT {
 
 		String responseBody = mockMvc
 			.perform(
-				post("/api/v1/service-orders/create")
+				post("/api/service-orders/create")
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +116,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				post("/api/v1/service-orders/create")
+				post("/api/service-orders/create")
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -157,7 +150,7 @@ class ServiceOrderControllerIT {
 		ServiceOrder savedOrder = serviceOrderRepository.save(buildServiceOrder(vehicle, mechanic, "Barulho ao frear"));
 
 		mockMvc
-			.perform(get("/api/v1/service-orders/{id}", savedOrder.getExternalId()).with(AuthUtil.admin()))
+			.perform(get("/api/service-orders/{id}", savedOrder.getExternalId()).with(AuthUtil.admin()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 			.andExpect(jsonPath("$.message").value("success"))
@@ -202,7 +195,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				put("/api/v1/service-orders/{id}/quote", savedOrder.getExternalId())
+				put("/api/service-orders/{id}/quote", savedOrder.getExternalId())
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -259,7 +252,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				post("/api/v1/service-orders/{id}/budget-response", savedOrder.getExternalId())
+				post("/api/service-orders/{id}/budget-response", savedOrder.getExternalId())
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -307,7 +300,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				get("/api/v1/service-orders/search")
+				get("/api/service-orders/search")
 					.with(AuthUtil.admin())
 					.param("licensePlate", vehicle.getLicensePlate())
 					.param("status", savedOrder.getStatus().name())
