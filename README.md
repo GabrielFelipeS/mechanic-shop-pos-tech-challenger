@@ -96,6 +96,10 @@ A API possui documentação viva detalhando todos os Schemas, DTOs e Endpoints. 
 
 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
 
+## Arquitetura
+
+O C4 Model da aplicacao esta documentado em [docs/architecture/c4-model.md](docs/architecture/c4-model.md).
+
 ## ✉️ Caixa de E-mails de Teste (Mailpit)
 
 Todos os e-mails disparados de forma assíncrona pela aplicação (notificações de Ordem de Serviço, aprovações de orçamento, alertas de estoque zerado) são interceptados e podem ser visualizados em tempo real através da interface web do Mailpit.
