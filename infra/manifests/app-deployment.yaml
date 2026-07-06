@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: mechanic-shop-backend
-          image: mechanic-shop-backend:${GIT_SHA}
+          image: kaizeen/mechanic-shop-backend:latest
           ports:
             - containerPort: 80
           livenessProbe:

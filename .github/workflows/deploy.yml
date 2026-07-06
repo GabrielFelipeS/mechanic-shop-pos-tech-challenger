@@ -1,6 +1,7 @@
 name: deploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -53,14 +54,14 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t kaizeen:mechanic-shop:${{ steps.vars.outputs.sha }} \
-            -t kaizeen:mechanic-shop:latest \
+            -t kaizeen:mechanic-shop-backend:${{ steps.vars.outputs.sha }} \
+            -t kaizeen:mechanic-shop-backend:latest \
             .
 
       - name: Push Docker Image
         run: |
-          docker push kaizeen:mechanic-shop:${{ steps.vars.outputs.sha }}
-          docker push kaizeen:mechanic-shop:latest
+          docker push kaizeen:mechanic-shop-backend:${{ steps.vars.outputs.sha }}
+          docker push kaizeen:mechanic-shop-backend:latest
 
   deploy-k8s:
     needs:
