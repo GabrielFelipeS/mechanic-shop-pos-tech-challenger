@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mechanic-shop-backend
+  labels:
+    app: mechanic-shop-backend
+spec:
+  selector:
+    matchLabels:
+      app: mechanic-shop-backend
+  template:
+    metadata:
+      name: mechanic-shop-backend
+      labels:
+        app: mechanic-shop-backend
+    spec:
+      containers:
+        - name: mechanic-shop-backend
+          image: mechanic-shop-backend:${GIT_SHA}
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      resources:
+        requests:
+          cpu: 1m
+
