@@ -54,14 +54,14 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t kaizeen:mechanic-shop-backend:${{ steps.vars.outputs.sha }} \
-            -t kaizeen:mechanic-shop-backend:latest \
+            -t kaizeen/mechanic-shop-backend:${{ steps.vars.outputs.sha }} \
+            -t kaizeen/mechanic-shop-backend:latest \
             .
 
       - name: Push Docker Image
         run: |
-          docker push kaizeen:mechanic-shop-backend:${{ steps.vars.outputs.sha }}
-          docker push kaizeen:mechanic-shop-backend:latest
+          docker push kaizeen/mechanic-shop-backend:${{ steps.vars.outputs.sha }}
+          docker push kaizeen/mechanic-shop-backend:latest
 
   deploy-k8s:
     needs:
@@ -87,12 +87,10 @@ jobs:
 
       - name: Apply Manifests
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+          cd infra/manifests
+          kubectl apply -f app-deployment.yaml
+          kubectl apply -f app-service.yaml
+          kubectl apply -f app-hpa.yaml
 
       - name: Wait Rollout
         run: |
