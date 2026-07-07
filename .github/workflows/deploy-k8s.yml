@@ -29,6 +29,10 @@ jobs:
             --name $EKS_CLUSTER_NAME \
             --region $AWS_REGION
 
+      - name: Get Pods
+        run: |
+          kubectl get pods -A
+
       - name: Apply Manifests
         run: |
           cd infra/manifests

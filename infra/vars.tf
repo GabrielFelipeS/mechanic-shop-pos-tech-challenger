@@ -24,10 +24,4 @@ variable "instance_type" {
   default = "t3.medium"
 }
 
-variable "labRole" {
-  default = "arn:aws:iam::371269711873:role/LabRole"
-}
 
-variable "principalArn" {
-  default = "arn:aws:iam::371269711873:role/voclabs"
-}
