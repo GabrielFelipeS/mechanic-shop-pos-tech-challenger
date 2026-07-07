@@ -576,6 +576,35 @@ class ServiceOrderControllerTest {
 		}
 	}
 
+	@Nested
+	class GetMetrics {
+
+		@Test
+		void shouldReturnMetrics() throws Exception {
+			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(3.5, 10L));
+
+			mockMvc
+				.perform(get("/api/service-orders/metrics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.message").value("success"))
+				.andExpect(jsonPath("$.data.averageCompletionDays").value(3.5))
+				.andExpect(jsonPath("$.data.totalCompletedOrders").value(10));
+		}
+
+		@Test
+		void shouldReturnNullAverageWhenNoOrdersFinished() throws Exception {
+			when(service.getMetrics()).thenReturn(new ServiceOrderMetricsDto(null, 0L));
+
+			mockMvc
+				.perform(get("/api/service-orders/metrics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+				.andExpect(jsonPath("$.data.averageCompletionDays").isEmpty())
+				.andExpect(jsonPath("$.data.totalCompletedOrders").value(0));
+		}
+	}
+
 	private ServiceOrder buildServiceOrder() {
 		User customer = new User();
 		customer.setId(1L);
