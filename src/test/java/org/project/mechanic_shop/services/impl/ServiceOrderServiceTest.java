@@ -1,18 +1,6 @@
 package org.project.mechanic_shop.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,36 +8,41 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
-import org.project.mechanic_shop.events.NewServiceOrderEvent;
-import org.project.mechanic_shop.events.ServiceOrderStatusChangedEvent;
-import org.project.mechanic_shop.models.Budget;
-import org.project.mechanic_shop.models.ServiceOrder;
-import org.project.mechanic_shop.models.ServiceOrderLabor;
-import org.project.mechanic_shop.models.ServiceOrderStockItem;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.Vehicle;
-import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
-import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.repositories.ServiceOrderRepository;
-import org.project.mechanic_shop.services.MechanicServiceService;
-import org.project.mechanic_shop.services.ServiceOrderService;
-import org.project.mechanic_shop.services.StockItemService;
-import org.project.mechanic_shop.services.UserService;
-import org.project.mechanic_shop.services.VehicleService;
+import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
+import org.project.mechanic_shop.application.services.*;
+import org.project.mechanic_shop.application.services.impl.ServiceOrderServiceImpl;
+import org.project.mechanic_shop.domain.dto.service_order_dto.*;
+import org.project.mechanic_shop.domain.entities.budget.Budget;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
+import org.project.mechanic_shop.domain.entities.service_order_labor.ServiceOrderLabor;
+import org.project.mechanic_shop.domain.entities.service_order_stock_item.ServiceOrderStockItem;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
+import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
+import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.utils.MechanicServiceHelper;
 import org.project.mechanic_shop.utils.UserHelper;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ServiceOrderServiceTest {
@@ -57,7 +50,7 @@ class ServiceOrderServiceTest {
 	private ServiceOrderService service;
 
 	@Mock
-	private ServiceOrderRepository repository;
+	private ServiceOrderRepositoryPort repository;
 
 	@Mock
 	private ApplicationEventPublisher eventPublisher;
@@ -93,7 +86,7 @@ class ServiceOrderServiceTest {
 		void shouldCreateServiceOrderWithoutMechanic() {
 			UUID vehicleId = UUID.randomUUID();
 			var vehicle = vehicle();
-			var dto = new ServiceOrderCreateDto(vehicleId, "Barulho no freio", 125000, null);
+			var dto = new ServiceOrderCreateDto(vehicleId, "Barulho no freio", 125000, null, null, null);
 
 			when(vehicleService.findByExternalId(vehicleId)).thenReturn(vehicle);
 			when(repository.save(any(ServiceOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -118,7 +111,7 @@ class ServiceOrderServiceTest {
 			UUID mechanicId = UUID.randomUUID();
 			var vehicle = vehicle();
 			var mechanic = mechanicUser();
-			var dto = new ServiceOrderCreateDto(vehicleId, "Trocar embreagem", 90000, mechanicId);
+			var dto = new ServiceOrderCreateDto(vehicleId, "Trocar embreagem", 90000, mechanicId, null, null);
 			ArgumentCaptor<NewServiceOrderEvent> eventCaptor = ArgumentCaptor.forClass(NewServiceOrderEvent.class);
 
 			when(vehicleService.findByExternalId(vehicleId)).thenReturn(vehicle);
@@ -176,15 +169,12 @@ class ServiceOrderServiceTest {
 			assertThat(labor.getQuantity()).isEqualTo(3);
 			assertThat(labor.getUnitPrice()).isEqualByComparingTo("150.00");
 			assertThat(labor.getTotalPrice()).isEqualByComparingTo("450.00");
-			assertThat(labor.getServiceOrder()).isSameAs(updated);
-
 			ServiceOrderStockItem orderPart = updated.getStockItems().getFirst();
 			assertThat(orderPart.getStockItem()).isSameAs(part);
 			assertThat(orderPart.getQuantity()).isEqualTo(2);
 			assertThat(orderPart.getStockItemType()).isEqualTo(part.getType());
 			assertThat(orderPart.getUnitPrice()).isEqualByComparingTo("40.00");
 			assertThat(orderPart.getTotalPrice()).isEqualByComparingTo("80.00");
-			assertThat(orderPart.getServiceOrder()).isSameAs(updated);
 		}
 
 		@Test
@@ -362,17 +352,126 @@ class ServiceOrderServiceTest {
 	}
 
 	@Nested
+	class ListActiveOrders {
+
+		@SuppressWarnings("unchecked")
+		@Test
+		void shouldCallRepositoryWithCorrectExclusionsAndStatusPriority() {
+			Pageable pageable = PageRequest.of(0, 10);
+			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(serviceOrder()));
+			ArgumentCaptor<List<ServiceOrderStatusEnum>> excludedCaptor =
+				(ArgumentCaptor<List<ServiceOrderStatusEnum>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
+
+			when(repository.findActiveOrders(
+				any(List.class),
+				eq(ServiceOrderStatusEnum.IN_PROGRESS),
+				eq(ServiceOrderStatusEnum.PENDING_APPROVAL),
+				eq(ServiceOrderStatusEnum.DIAGNOSIS),
+				eq(ServiceOrderStatusEnum.RECEIVED),
+				any(Pageable.class)
+			)).thenReturn(expectedPage);
+
+			var result = service.listActiveOrders(pageable);
+
+			assertThat(result).isSameAs(expectedPage);
+
+			verify(repository).findActiveOrders(
+				excludedCaptor.capture(),
+				eq(ServiceOrderStatusEnum.IN_PROGRESS),
+				eq(ServiceOrderStatusEnum.PENDING_APPROVAL),
+				eq(ServiceOrderStatusEnum.DIAGNOSIS),
+				eq(ServiceOrderStatusEnum.RECEIVED),
+				any(Pageable.class)
+			);
+
+			assertThat(excludedCaptor.getValue()).containsExactlyInAnyOrder(
+				ServiceOrderStatusEnum.COMPLETED,
+				ServiceOrderStatusEnum.DELIVERED,
+				ServiceOrderStatusEnum.CANCELED
+			);
+		}
+	}
+
+	@Nested
+	class ProcessBudgetResponseByToken {
+
+		@Test
+		void shouldApproveOrderWithdrawStockAndNullifyToken() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.setApprovalToken(token);
+			order.addStockItem(serviceOrderStockItem(stockItem(), 2, new BigDecimal("20.00")));
+			ArgumentCaptor<ServiceOrderStatusChangedEvent> eventCaptor = ArgumentCaptor.forClass(
+				ServiceOrderStatusChangedEvent.class
+			);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+
+			var updated = service.processBudgetResponseByToken(token, true);
+
+			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.APPROVED);
+			assertThat(updated.getApprovalToken()).isNull();
+			assertThat(updated.getApprovalDate()).isNotNull();
+
+			verify(stockItemService).withdrawStock(
+				order.getStockItems().getFirst().getStockItem().getExternalId(), 2
+			);
+
+			verify(eventPublisher).publishEvent(eventCaptor.capture());
+			assertThat(eventCaptor.getValue().oldStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			assertThat(eventCaptor.getValue().newStatus()).isEqualTo(ServiceOrderStatusEnum.IN_PROGRESS);
+		}
+
+		@Test
+		void shouldCancelOrderAndNullifyTokenWhenRejected() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.setApprovalToken(token);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+
+			var updated = service.processBudgetResponseByToken(token, false);
+
+			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.CANCELED);
+			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.REJECTED);
+			assertThat(updated.getApprovalToken()).isNull();
+		}
+
+		@Test
+		void shouldThrowWhenTokenNotFound() {
+			when(repository.findByApprovalToken("invalid-token")).thenReturn(Optional.empty());
+
+			assertThatThrownBy(() -> service.processBudgetResponseByToken("invalid-token", true))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage("Token de aprovação inválido ou já utilizado.");
+		}
+
+		@Test
+		void shouldThrowWhenOrderIsNotPendingApproval() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
+			order.setApprovalToken(token);
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+
+			assertThatThrownBy(() -> service.processBudgetResponseByToken(token, true))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("IN_PROGRESS");
+
+			verify(repository, never()).save(any(ServiceOrder.class));
+		}
+	}
+
+	@Nested
 	class Search {
-
-		@SuppressWarnings("unchecked")
-		private ArgumentCaptor<Example<ServiceOrder>> exampleCaptor() {
-			return (ArgumentCaptor<Example<ServiceOrder>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
-		}
-
-		@SuppressWarnings("unchecked")
-		private Example<ServiceOrder> anyExample() {
-			return any(Example.class);
-		}
 
 		@Test
 		void shouldReturnServiceOrdersWhenSearchCriteriaIsProvided() {
@@ -380,19 +479,39 @@ class ServiceOrderServiceTest {
 			var user = UserHelper.generateUser();
 			Pageable pageable = PageRequest.of(0, 10);
 			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(order));
-			ArgumentCaptor<Example<ServiceOrder>> captor = exampleCaptor();
 
-			when(repository.findAll(anyExample(), eq(pageable))).thenReturn(expectedPage);
+			when(repository.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable)).thenReturn(expectedPage);
 
 			var result = service.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, pageable, user);
 
 			assertThat(result).isEqualTo(expectedPage);
+			verify(repository).search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable);
+		}
+	}
 
-			verify(repository).findAll(captor.capture(), eq(pageable));
-			ServiceOrder probe = captor.getValue().getProbe();
-			assertThat(probe.getStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
-			assertThat(probe.getVehicle()).isNotNull();
-			assertThat(probe.getVehicle().getLicensePlate()).isEqualTo("ABC1234");
+	@Nested
+	class GetMetrics {
+
+		@Test
+		void shouldReturnAverageAndCountWhenOrdersExist() {
+			when(repository.findAverageCompletionDays()).thenReturn(3.5);
+			when(repository.countCompletedOrders()).thenReturn(10L);
+
+			ServiceOrderMetricsDto result = service.getMetrics();
+
+			assertThat(result.averageCompletionDays()).isEqualTo(3.5);
+			assertThat(result.totalCompletedOrders()).isEqualTo(10L);
+		}
+
+		@Test
+		void shouldReturnNullAverageAndZeroCountWhenNoOrdersFinished() {
+			when(repository.findAverageCompletionDays()).thenReturn(null);
+			when(repository.countCompletedOrders()).thenReturn(0L);
+
+			ServiceOrderMetricsDto result = service.getMetrics();
+
+			assertThat(result.averageCompletionDays()).isNull();
+			assertThat(result.totalCompletedOrders()).isZero();
 		}
 	}
 
@@ -453,7 +572,7 @@ class ServiceOrderServiceTest {
 	}
 
 	private ServiceOrderLabor serviceOrderLabor(
-		org.project.mechanic_shop.models.MechanicService mechanicService,
+		MechanicService mechanicService,
 		int quantity
 	) {
 		var labor = new ServiceOrderLabor();

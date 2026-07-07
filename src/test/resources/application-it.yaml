@@ -1,0 +1,32 @@
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+app:
+  seed:
+    password: 'TESTE123'
+    warehouse:
+      name: 'WAREHOUSE'
+      email: 'warehouse@gmail.com'
+      document: '123456789'
+      role: 'WAREHOUSE'
+    receptionist:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
+    mechanic:
+      name: ''
+      email: ''
+      document: ''
+      role: ''
+    admin:
+      name: ''
+      email: ''
+      document: ''
+      role: ''

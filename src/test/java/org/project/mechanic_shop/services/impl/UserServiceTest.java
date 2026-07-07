@@ -1,29 +1,33 @@
 package org.project.mechanic_shop.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.repositories.UserRepository;
-import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.services.UserService;
+import org.project.mechanic_shop.application.services.impl.UserServiceImpl;
+import org.project.mechanic_shop.application.validators.UserValidator;
+import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.utils.UserHelper;
-import org.project.mechanic_shop.validators.UserValidator;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -31,7 +35,7 @@ class UserServiceTest {
 	private UserService userService;
 
 	@Mock
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Mock
 	private UserValidator userValidator;
@@ -166,53 +170,52 @@ class UserServiceTest {
 	}
 
 	@Nested
+	class FindByRoles {
+
+		@Test
+		void shouldReturnUsersMatchingGivenRoles() {
+			var buyer = UserHelper.generateUser();
+			buyer.setRole("BUYER");
+			var warehouse = UserHelper.generateUser();
+			warehouse.setRole("WAREHOUSE_CLERK");
+			List<String> roles = List.of("BUYER", "WAREHOUSE_CLERK");
+
+			when(userRepository.findByRoleIn(roles)).thenReturn(List.of(buyer, warehouse));
+
+			var result = userService.findByRoles(roles);
+
+			assertThat(result).containsExactlyInAnyOrder(buyer, warehouse);
+			verify(userRepository).findByRoleIn(roles);
+		}
+
+		@Test
+		void shouldReturnEmptyListWhenNoUsersMatchRoles() {
+			List<String> roles = List.of("BUYER");
+
+			when(userRepository.findByRoleIn(roles)).thenReturn(List.of());
+
+			var result = userService.findByRoles(roles);
+
+			assertThat(result).isEmpty();
+		}
+	}
+
+	@Nested
 	class Search {
-
-		@SuppressWarnings("unchecked")
-		private ArgumentCaptor<Example<User>> exampleUserCaptor() {
-			return (ArgumentCaptor<Example<User>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Example.class);
-		}
-
-		@SuppressWarnings("unchecked")
-		private Example<User> getAnyExample() {
-			return any(Example.class);
-		}
 
 		@Test
 		void shouldReturnUsersWhenSearchCriteriaIsProvided() {
 			var user = UserHelper.generateUser();
-			User expected = new User();
-			expected.setDocument(user.getDocument());
-			expected.setName(user.getName());
-			expected.setEmail(user.getEmail());
-
-			ArgumentCaptor<Example<User>> captor = exampleUserCaptor();
-
 			Pageable pageable = PageRequest.of(0, 10);
-
 			Page<User> expectedPage = new PageImpl<>(List.of(user));
 
-			when(userRepository.findAll(getAnyExample(), eq(pageable))).thenReturn(expectedPage);
+			when(userRepository.search(user.getDocument(), user.getName(), user.getEmail(), user.getRole(), pageable))
+				.thenReturn(expectedPage);
 
-			var userPage = userService.search(
-				user.getDocument(),
-				user.getName(),
-				user.getEmail(),
-				user.getRole(),
-				pageable
-			);
+			var userPage = userService.search(user.getDocument(), user.getName(), user.getEmail(), user.getRole(), pageable);
 
 			assertThat(userPage).isEqualTo(expectedPage);
-
-			verify(userRepository).findAll(captor.capture(), eq(pageable));
-
-			Example<User> capturedExample = captor.getValue();
-
-			User probe = capturedExample.getProbe();
-
-			assertThat(probe.getDocument()).isEqualTo(user.getDocument());
-			assertThat(probe.getName()).isEqualTo(user.getName());
-			assertThat(probe.getEmail()).isEqualTo(user.getEmail());
+			verify(userRepository).search(user.getDocument(), user.getName(), user.getEmail(), user.getRole(), pageable);
 		}
 	}
 }

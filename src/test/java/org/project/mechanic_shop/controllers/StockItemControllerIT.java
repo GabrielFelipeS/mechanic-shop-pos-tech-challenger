@@ -2,19 +2,16 @@ package org.project.mechanic_shop.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.dto.stock_item_dto.StockItemManDto;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.repositories.StockItemRepository;
+import org.project.mechanic_shop.config.AbstractIntegrationTest;
+import org.project.mechanic_shop.domain.dto.stock_item_dto.StockItemManDto;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -25,11 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ActiveProfiles("test")
-@Transactional
-@SpringBootTest
-@AutoConfigureMockMvc
-class StockItemControllerIT {
+class StockItemControllerIT extends AbstractIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -37,7 +30,7 @@ class StockItemControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private StockItemRepository stockItemRepository;
+	private StockItemRepositoryPort stockItemRepository;
 
 	@Test
 	void shouldCreateStockItemAndPersistIt() throws Exception {

@@ -1,9 +1,9 @@
 package org.project.mechanic_shop.config;
 
 import org.mockito.Mockito;
-import org.project.mechanic_shop.mappers.UserMapper;
-import org.project.mechanic_shop.repositories.UserRepository;
-import org.project.mechanic_shop.services.UserService;
+import org.project.mechanic_shop.application.mappers.UserMapper;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.services.UserService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
@@ -21,7 +21,7 @@ public class TestConfig {
 	}
 
 	@Bean
-	UserRepository userRepository() {
-		return Mockito.mock(UserRepository.class);
+	UserRepositoryPort userRepository() {
+		return Mockito.mock(UserRepositoryPort.class);
 	}
 }

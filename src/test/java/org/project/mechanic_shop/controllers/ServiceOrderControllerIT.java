@@ -13,42 +13,35 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderCreateDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderLaborManDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderQuoteDto;
-import org.project.mechanic_shop.dto.service_order_dto.ServiceOrderStockItemManDto;
-import org.project.mechanic_shop.dto.service_order_dto.budget_dto.BudgetResponseDto;
-import org.project.mechanic_shop.models.Budget;
-import org.project.mechanic_shop.models.MechanicService;
-import org.project.mechanic_shop.models.ServiceOrder;
-import org.project.mechanic_shop.models.ServiceOrderStockItem;
-import org.project.mechanic_shop.models.StockItem;
-import org.project.mechanic_shop.models.User;
-import org.project.mechanic_shop.models.Vehicle;
-import org.project.mechanic_shop.models.enums.BudgetStatusEnum;
-import org.project.mechanic_shop.models.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.models.enums.StockItemTypeEnum;
-import org.project.mechanic_shop.models.enums.UserRoleEnum;
-import org.project.mechanic_shop.repositories.MechanicServiceRepository;
-import org.project.mechanic_shop.repositories.ServiceOrderRepository;
-import org.project.mechanic_shop.repositories.StockItemRepository;
-import org.project.mechanic_shop.repositories.UserRepository;
-import org.project.mechanic_shop.repositories.VehicleRepository;
+import org.project.mechanic_shop.config.AbstractIntegrationTest;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderCreateDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderLaborManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderQuoteDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.ServiceOrderStockItemManDto;
+import org.project.mechanic_shop.domain.dto.service_order_dto.budget_dto.BudgetResponseDto;
+import org.project.mechanic_shop.domain.entities.budget.Budget;
+import org.project.mechanic_shop.domain.entities.mechanic_service.MechanicService;
+import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
+import org.project.mechanic_shop.domain.entities.service_order_stock_item.ServiceOrderStockItem;
+import org.project.mechanic_shop.domain.entities.stock_item.StockItem;
+import org.project.mechanic_shop.domain.entities.user.User;
+import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
+import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
+import org.project.mechanic_shop.domain.enums.StockItemTypeEnum;
+import org.project.mechanic_shop.domain.enums.UserRoleEnum;
+import org.project.mechanic_shop.application.ports.MechanicServiceRepositoryPort;
+import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
+import org.project.mechanic_shop.application.ports.StockItemRepositoryPort;
+import org.project.mechanic_shop.application.ports.UserRepositoryPort;
+import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.utils.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
-@ActiveProfiles("test")
-@Transactional
-@SpringBootTest
-@AutoConfigureMockMvc
-class ServiceOrderControllerIT {
+class ServiceOrderControllerIT extends AbstractIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -56,19 +49,19 @@ class ServiceOrderControllerIT {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
-	private ServiceOrderRepository serviceOrderRepository;
+	private ServiceOrderRepositoryPort serviceOrderRepository;
 
 	@Autowired
-	private VehicleRepository vehicleRepository;
+	private VehicleRepositoryPort vehicleRepository;
 
 	@Autowired
-	private UserRepository userRepository;
+	private UserRepositoryPort userRepository;
 
 	@Autowired
-	private StockItemRepository stockItemRepository;
+	private StockItemRepositoryPort stockItemRepository;
 
 	@Autowired
-	private MechanicServiceRepository mechanicServiceRepository;
+	private MechanicServiceRepositoryPort mechanicServiceRepository;
 
 	@Test
 	void shouldCreateServiceOrderAndPersistIt() throws Exception {
@@ -84,12 +77,14 @@ class ServiceOrderControllerIT {
 			vehicle.getExternalId(),
 			"Motor falhando",
 			45210,
-			mechanic.getExternalId()
+			mechanic.getExternalId(),
+			null,
+			null
 		);
 
 		String responseBody = mockMvc
 			.perform(
-				post("/api/v1/service-orders/create")
+				post("/api/service-orders/create")
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -117,11 +112,11 @@ class ServiceOrderControllerIT {
 
 	@Test
 	void shouldReturnValidationErrorWhenCreatePayloadIsInvalid() throws Exception {
-		ServiceOrderCreateDto invalidPayload = new ServiceOrderCreateDto(null, "", 45210, null);
+		ServiceOrderCreateDto invalidPayload = new ServiceOrderCreateDto(null, "", 45210, null, null, null);
 
 		mockMvc
 			.perform(
-				post("/api/v1/service-orders/create")
+				post("/api/service-orders/create")
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -155,7 +150,7 @@ class ServiceOrderControllerIT {
 		ServiceOrder savedOrder = serviceOrderRepository.save(buildServiceOrder(vehicle, mechanic, "Barulho ao frear"));
 
 		mockMvc
-			.perform(get("/api/v1/service-orders/{id}", savedOrder.getExternalId()).with(AuthUtil.admin()))
+			.perform(get("/api/service-orders/{id}", savedOrder.getExternalId()).with(AuthUtil.admin()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
 			.andExpect(jsonPath("$.message").value("success"))
@@ -200,7 +195,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				put("/api/v1/service-orders/{id}/quote", savedOrder.getExternalId())
+				put("/api/service-orders/{id}/quote", savedOrder.getExternalId())
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -257,7 +252,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				post("/api/v1/service-orders/{id}/budget-response", savedOrder.getExternalId())
+				post("/api/service-orders/{id}/budget-response", savedOrder.getExternalId())
 					.with(AuthUtil.admin())
 					.with(csrf())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -305,7 +300,7 @@ class ServiceOrderControllerIT {
 
 		mockMvc
 			.perform(
-				get("/api/v1/service-orders/search")
+				get("/api/service-orders/search")
 					.with(AuthUtil.admin())
 					.param("licensePlate", vehicle.getLicensePlate())
 					.param("status", savedOrder.getStatus().name())
