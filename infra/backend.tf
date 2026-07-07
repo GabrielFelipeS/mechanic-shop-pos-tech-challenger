@@ -1,9 +1,7 @@
 terraform {
-    cloud {
-        organization = "tf-14SOAT"
-
-        workspaces {
-            name = "terraform-soat"
-        }
-    }
+  backend "s3" {
+    bucket = "mechanic-shop-pos-tech-challenger"
+    key    = "backend/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
