@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: mechanic-shop-backend
-          image: kaizeen/mechanic-shop-backend:latest
+          image: kaizenn/mechanic-shop-backend:latest
           ports:
             - containerPort: 80
           livenessProbe:

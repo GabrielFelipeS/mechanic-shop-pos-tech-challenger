@@ -1,8 +1,0 @@
-name: pipeline.yml
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  # use mechanic-shop-backend as image tag

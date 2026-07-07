@@ -54,14 +54,14 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t kaizeen/mechanic-shop-backend:${{ steps.vars.outputs.sha }} \
-            -t kaizeen/mechanic-shop-backend:latest \
+            -t kaizenn/mechanic-shop-backend:${{ steps.vars.outputs.sha }} \
+            -t kaizenn/mechanic-shop-backend:latest \
             .
 
       - name: Push Docker Image
         run: |
-          docker push kaizeen/mechanic-shop-backend:${{ steps.vars.outputs.sha }}
-          docker push kaizeen/mechanic-shop-backend:latest
+          docker push kaizenn/mechanic-shop-backend:${{ steps.vars.outputs.sha }}
+          docker push kaizenn/mechanic-shop-backend:latest
 
   deploy-k8s:
     needs:
