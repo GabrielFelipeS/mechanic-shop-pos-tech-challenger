@@ -1,5 +1,5 @@
 variable "projectName" {
-  default = "fiap-2026-14soat"
+  default = "mechanic-shop-pos-tech-challenger"
 }
 
 variable "region_default" {
@@ -12,9 +12,9 @@ variable "cidr_vpc" {
 
 variable "tags" {
   default = {
-    Name        = "fiap-terraform-aula",
+    Name        = "mechanic-shop-pos-tech-challenger",
     School      = "FIAP",
-    Turma       = "14SOAT",
+    Turma       = "15SOAT",
     Environment = "Production",
     Year        = "2026"
   }
