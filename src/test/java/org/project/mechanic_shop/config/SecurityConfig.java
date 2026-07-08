@@ -1,27 +1,28 @@
 package org.project.mechanic_shop.config;
 
-import org.mockito.Mockito;
 import org.project.mechanic_shop.shared.config.security.AuthorizationService;
 import org.project.mechanic_shop.shared.config.security.SecurityFilter;
 import org.project.mechanic_shop.shared.config.security.TokenService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
+import static org.mockito.Mockito.mock;
+
 @TestConfiguration
 public class SecurityConfig {
 
 	@Bean
 	TokenService tokenService() {
-		return Mockito.mock(TokenService.class);
+		return mock(TokenService.class);
 	}
 
 	@Bean
 	AuthorizationService authorizationService() {
-		return Mockito.mock(AuthorizationService.class);
+		return mock(AuthorizationService.class);
 	}
 
 	@Bean
 	SecurityFilter securityFilter() {
-		return Mockito.mock(SecurityFilter.class);
+		return mock(SecurityFilter.class);
 	}
 }

@@ -8,9 +8,12 @@ import org.project.mechanic_shop.domain.events.OutOfStockEvent;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.enums.UserRoleEnum;
 import org.project.mechanic_shop.application.ports.EmailService;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @Slf4j
@@ -21,7 +24,8 @@ public class StockNotificationListener {
 	private final UserService userService;
 
 	@Async
-	@EventListener
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleOutOfStockEvent(OutOfStockEvent event) {
 		var item = event.item();
 		var missingQuantity = event.missingQuantity();

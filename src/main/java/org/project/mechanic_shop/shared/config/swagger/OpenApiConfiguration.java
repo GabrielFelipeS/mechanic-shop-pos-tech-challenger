@@ -23,10 +23,10 @@ import org.springframework.context.annotation.Configuration;
 			| admin@shop.com | ADMIN |
 			| receptionist@shop.com | RECEPTIONIST |
 			| mechanic@shop.com | MECHANIC |
-			| warehouse@shop.com | WAREHOUSE |
+			| warehouse@shop.com | WAREHOUSE_CLERK |
 			| buyer@shop.com | BUYER |
 
-			> The `CUSTOMER` role is not seeded — a RECEPTIONIST must create it via `POST /api/v1/users`.
+			> The `CUSTOMER` role is not seeded — a RECEPTIONIST must create it via `POST /api/users/create`.
 			""",
 		contact = @Contact(name = "Eddie Marley", email = "marley_eddie@hotmail.com")
 	),
