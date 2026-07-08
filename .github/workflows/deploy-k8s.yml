@@ -31,6 +31,18 @@ jobs:
         run: |
           cd ./infra/kind
 
+      - name: Debug Echo 2
+        run: |
+          pwd
+          ls -la
+          echo "Workspace: $GITHUB_WORKSPACE"
+          ls -R
+
+      - name: Debug Find 2
+        run: |
+          pwd
+          find . -maxdepth 3 -type d
+
       - name: Deploy Kubernetes
         run: |
           terraform init
