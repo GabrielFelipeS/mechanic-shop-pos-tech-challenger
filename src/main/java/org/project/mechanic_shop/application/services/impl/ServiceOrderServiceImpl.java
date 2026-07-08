@@ -472,7 +472,10 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
 		order.setActualCompletionDate(now);
 
-		long daysTaken = ChronoUnit.DAYS.between(order.getApprovalDate(), now);
+		long daysTaken = ChronoUnit.DAYS.between(
+			order.getApprovalDate().atZone(ZoneId.systemDefault()),
+			now.atZone(ZoneId.systemDefault())
+		);
 
 		order.setActualCompletionDays((int) daysTaken);
 	}
