@@ -15,6 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug Echo
+        run: |
+          pwd
+          ls -la
+          echo "Workspace: $GITHUB_WORKSPACE"
+          ls -R
+
+      - name: Debug Find
+        run: |
+          pwd
+          find . -maxdepth 3 -type d
+
       - name: Move to Kind Infra
         run: |
           cd ./mechanic-shop-pos-tech-challenger/infra/kind
