@@ -69,7 +69,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			serviceOrder.setResponsibleMechanic(userService.findByExternalId(dto.mechanicExternalId()));
 		}
 
-		boolean hasItems = applyInitialItems(serviceOrder, dto);
+		applyInitialItems(serviceOrder, dto);
 
 		ServiceOrder savedOrder = serviceOrderRepository.save(serviceOrder);
 
@@ -77,23 +77,15 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			eventPublisher.publishEvent(new NewServiceOrderEvent(savedOrder));
 		}
 
-		if (hasItems) {
-			eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(
-				savedOrder.getExternalId(),
-				ServiceOrderStatusEnum.RECEIVED,
-				ServiceOrderStatusEnum.DIAGNOSIS
-			));
-		}
-
 		log.info("Service Order created successfully. ID: {}", savedOrder.getId());
 		return savedOrder;
 	}
 
-	private boolean applyInitialItems(ServiceOrder order, ServiceOrderCreateDto dto) {
+	private void applyInitialItems(ServiceOrder order, ServiceOrderCreateDto dto) {
 		boolean hasLabors = dto.labors() != null && !dto.labors().isEmpty();
 		boolean hasParts  = dto.parts()  != null && !dto.parts().isEmpty();
 
-		if (!hasLabors && !hasParts) return false;
+		if (!hasLabors && !hasParts) return;
 
 		BigDecimal total = BigDecimal.ZERO;
 
@@ -101,9 +93,6 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		if (hasParts)  total = total.add(addParts(order, dto.parts()));
 
 		order.getBudget().setTotalAmount(total);
-		order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
-		log.info("Initial quote provided at creation — status set to DIAGNOSIS.");
-		return true;
 	}
 
 	private BigDecimal addLabors(ServiceOrder order, List<ServiceOrderLaborManDto> labors) {
@@ -477,7 +466,6 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		order.setEstimatedCompletionDays(totalEstimatedDays);
 		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(totalEstimatedDays));
-		order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 	}
 
 	public void recordActualFinish(ServiceOrder order) {
