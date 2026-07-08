@@ -159,47 +159,13 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		}
 
 		order.setMechanicDiagnosis(dto.mechanicDiagnosis());
-		BigDecimal totalAmount = BigDecimal.ZERO;
 
 		order.getLabors().clear();
 		order.getStockItems().clear();
 
-		if (dto.labors() != null) {
-			for (ServiceOrderLaborManDto laborDto : dto.labors()) {
-				MechanicService mechanicService = mechanicServiceCatalog.findByExternalId(
-					laborDto.mechanicServiceExternalId()
-				);
-				BigDecimal unitPrice = mechanicService.getPrice();
-				BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(laborDto.quantity()));
-
-				ServiceOrderLabor labor = new ServiceOrderLabor();
-				labor.setMechanicService(mechanicService);
-				labor.setQuantity(laborDto.quantity());
-				labor.setUnitPrice(unitPrice);
-				labor.setTotalPrice(totalPrice);
-
-				order.addLabor(labor);
-				totalAmount = totalAmount.add(totalPrice);
-			}
-		}
-
-		if (dto.parts() != null) {
-			for (ServiceOrderStockItemManDto partDto : dto.parts()) {
-				StockItem stockItem = stockItemService.findByExternalId(partDto.partExternalId());
-				BigDecimal unitPrice = stockItem.getSalePrice();
-				BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(partDto.quantity()));
-
-				ServiceOrderStockItem orderPart = new ServiceOrderStockItem();
-				orderPart.setStockItem(stockItem);
-				orderPart.setStockItemType(stockItem.getType());
-				orderPart.setQuantity(partDto.quantity());
-				orderPart.setUnitPrice(unitPrice);
-				orderPart.setTotalPrice(totalPrice);
-
-				order.addStockItem(orderPart);
-				totalAmount = totalAmount.add(totalPrice);
-			}
-		}
+		BigDecimal totalAmount = BigDecimal.ZERO;
+		if (dto.labors() != null) totalAmount = totalAmount.add(addLabors(order, dto.labors()));
+		if (dto.parts() != null)  totalAmount = totalAmount.add(addParts(order, dto.parts()));
 
 		if (order.getStatus() == ServiceOrderStatusEnum.RECEIVED) {
 			order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
@@ -220,6 +186,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		return updatedOrder;
 	}
 
+	@Override
 	@Transactional
 	public ServiceOrder requestCustomerApproval(UUID externalId) {
 		ServiceOrder order = serviceOrderRepository
@@ -449,7 +416,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		);
 	}
 
-	public void setEstimatedDeadline(ServiceOrder order) {
+	private void setEstimatedDeadline(ServiceOrder order) {
 		long totalServiceMinutes = order
 			.getLabors()
 			.stream()
@@ -468,7 +435,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(totalEstimatedDays));
 	}
 
-	public void recordActualFinish(ServiceOrder order) {
+	private void recordActualFinish(ServiceOrder order) {
 		LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
 		order.setActualCompletionDate(now);
 
