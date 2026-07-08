@@ -74,9 +74,9 @@ jobs:
 
       - name: Move to Kind Infra
         run: |
-          cd ./mechanic-shop-pos-tech-challenger/infra/kind
 
       - name: Deploy Kubernetes
         run: |
+          cd ./mechanic-shop-pos-tech-challenger/infra/kind
           terraform init
           terraform apply --auto-aprove
