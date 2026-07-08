@@ -1,5 +1,5 @@
 infra/.terraform/
-infra2/.terraform/
+infra/kind/.terraform/
 **/.terraform/
 *.tfstate
 *.tfstate.*

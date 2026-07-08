@@ -34,3 +34,10 @@ spec:
               port: 8080
             initialDelaySeconds: 40
             periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${app_cpu_request}
+              memory: ${app_memory_request}
+            limits:
+              cpu: ${app_cpu_limit}
+              memory: ${app_memory_limit}

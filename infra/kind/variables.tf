@@ -22,6 +22,48 @@ variable "app_replicas" {
   default     = 1
 }
 
+variable "app_cpu_request" {
+  description = "CPU request da API, usada pelo HPA como base de utilizacao."
+  type        = string
+  default     = "100m"
+}
+
+variable "app_cpu_limit" {
+  description = "CPU limit da API."
+  type        = string
+  default     = "500m"
+}
+
+variable "app_memory_request" {
+  description = "Memoria request da API."
+  type        = string
+  default     = "256Mi"
+}
+
+variable "app_memory_limit" {
+  description = "Memoria limit da API."
+  type        = string
+  default     = "512Mi"
+}
+
+variable "hpa_min_replicas" {
+  description = "Numero minimo de replicas no HorizontalPodAutoscaler."
+  type        = number
+  default     = 1
+}
+
+variable "hpa_max_replicas" {
+  description = "Numero maximo de replicas no HorizontalPodAutoscaler."
+  type        = number
+  default     = 10
+}
+
+variable "hpa_cpu_average_utilization" {
+  description = "Meta media de utilizacao de CPU do HPA."
+  type        = number
+  default     = 30
+}
+
 variable "load_local_image" {
   description = "Carrega a imagem da API no cluster Kind usando `kind load docker-image`."
   type        = bool
