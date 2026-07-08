@@ -32,6 +32,15 @@ spring:
             enable: false
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 springdoc:
   override-with-generic-response: false
   swagger-ui:

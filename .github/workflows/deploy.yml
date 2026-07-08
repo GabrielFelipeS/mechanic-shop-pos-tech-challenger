@@ -67,35 +67,16 @@ jobs:
     needs:
       - docker
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Configure kubectl
+      - name: Move to Kind Infra
         run: |
-          aws eks update-kubeconfig \
-            --name $EKS_CLUSTER_NAME \
-            --region $AWS_REGION
+          cd ./infra/kind
 
-      - name: Apply Manifests
+      - name: Deploy Kubernetes
         run: |
-          cd infra/manifests
-          kubectl apply -f app-deployment.yaml
-          kubectl apply -f app-service.yaml
-          kubectl apply -f app-hpa.yaml
-
-      - name: Wait Rollout
-        run: |
-          kubectl rollout status \
-            deployment/app \
-            -n production \
-            --timeout=300s
+          terraform init
+          terraform apply --auto-aprove
