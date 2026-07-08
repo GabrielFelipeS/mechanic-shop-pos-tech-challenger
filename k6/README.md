@@ -1,6 +1,6 @@
 # k6 load tests
 
-Suite `k6` para validar escalabilidade da API com foco em uso real da aplicacao:
+Suite `k6` para validar escalabilidade da API com foco em uso real da aplicação:
 
 - fluxo de leitura geral do sistema (`search` em usuarios, veiculos, catalogo, estoque e ordens de servico)
 - ciclo completo de ordem de servico (`create -> quote -> request-approval -> budget-response -> finish -> deliver`)
@@ -18,10 +18,17 @@ Suite `k6` para validar escalabilidade da API com foco em uso real da aplicacao:
 ## Pre-requisitos
 
 1. Subir a API e o banco.
-2. Garantir que os usuarios seed existam e consigam autenticar.
+2. Garantir que os usuários seed existam e consigam autenticar.
 3. Instalar `k6`.
 
-## Variaveis suportadas
+## Fedora
+
+```bash
+    sudo dnf install https://dl.k6.io/rpm/repo.rpm
+    sudo dnf install k6
+```
+
+## Variáveis suportadas
 
 Principais:
 
@@ -35,7 +42,7 @@ WAREHOUSE_EMAIL=warehouse@shop.com
 SCENARIO=all
 ```
 
-Controle fino dos cenarios:
+Controle fino dos cenários:
 
 ```bash
 BASELINE_TARGET_VUS=10
@@ -45,7 +52,7 @@ STRESS_TARGET_3=60
 SPIKE_TARGET=80
 ```
 
-## Execucao
+## Execução
 
 Rodar tudo:
 

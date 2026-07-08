@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-#      - master
+      - master
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -72,11 +72,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Move to Kind Infra
+      - name: Deploy Terraform
         run: |
-
-      - name: Deploy Kubernetes
-        run: |
-          cd ./mechanic-shop-pos-tech-challenger/infra/kind
+          cd ./infra/kind
           terraform init
           terraform apply -auto-approve
