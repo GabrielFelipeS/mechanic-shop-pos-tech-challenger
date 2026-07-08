@@ -24,15 +24,20 @@ spec:
                 name: mechanic-shop-app-config
             - secretRef:
                 name: mechanic-shop-app-secret
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
           readinessProbe:
             tcpSocket:
               port: 8080
-            initialDelaySeconds: 25
+            initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: 8080
-            initialDelaySeconds: 40
+            initialDelaySeconds: 10
             periodSeconds: 20
           resources:
             requests:

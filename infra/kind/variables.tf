@@ -25,13 +25,13 @@ variable "app_replicas" {
 variable "app_cpu_request" {
   description = "CPU request da API, usada pelo HPA como base de utilizacao."
   type        = string
-  default     = "100m"
+  default     = "300m"
 }
 
 variable "app_cpu_limit" {
   description = "CPU limit da API."
   type        = string
-  default     = "500m"
+  default     = "1000m"
 }
 
 variable "app_memory_request" {
@@ -61,7 +61,7 @@ variable "hpa_max_replicas" {
 variable "hpa_cpu_average_utilization" {
   description = "Meta media de utilizacao de CPU do HPA."
   type        = number
-  default     = 30
+  default     = 80
 }
 
 variable "load_local_image" {
