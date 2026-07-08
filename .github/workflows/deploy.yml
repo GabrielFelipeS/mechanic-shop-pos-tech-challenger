@@ -79,4 +79,4 @@ jobs:
         run: |
           cd ./mechanic-shop-pos-tech-challenger/infra/kind
           terraform init
-          terraform apply --auto-aprove
+          terraform apply -auto-approve
