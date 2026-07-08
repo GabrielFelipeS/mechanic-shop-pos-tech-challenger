@@ -15,35 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug Echo
-        run: |
-          pwd
-          ls -la
-          echo "Workspace: $GITHUB_WORKSPACE"
-          ls -R
-
-      - name: Debug Find
-        run: |
-          pwd
-          find . -maxdepth 3 -type d
-
-      - name: Move to Kind Infra
-        run: |
-          cd ./infra/kind
-
-      - name: Debug Echo 2
-        run: |
-          pwd
-          ls -la
-          echo "Workspace: $GITHUB_WORKSPACE"
-          ls -R
-
-      - name: Debug Find 2
-        run: |
-          pwd
-          find . -maxdepth 3 -type d
-
       - name: Deploy Kubernetes
         run: |
+          cd ./infra/kind
           terraform init
           terraform apply --auto-aprove
