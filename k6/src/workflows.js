@@ -51,7 +51,7 @@ function createStockItem(warehouseToken, scenarioName) {
 
 function createServiceOrder(receptionistToken, vehicleExternalId, mechanicExternalId, scenarioName) {
   const orderPayload = buildServiceOrderPayload(vehicleExternalId, mechanicExternalId);
-  return getData('POST', '/api/v1/service-orders/create', {
+  return getData('POST', '/api/service-orders/create', {
     token: receptionistToken,
     body: orderPayload,
     expectedStatus: 201,
@@ -60,7 +60,7 @@ function createServiceOrder(receptionistToken, vehicleExternalId, mechanicExtern
 }
 
 function updateQuote(mechanicToken, serviceOrderId, stockItemId, mechanicServiceId, scenarioName) {
-  return getData('PUT', `/api/v1/service-orders/${serviceOrderId}/quote`, {
+  return getData('PUT', `/api/service-orders/${serviceOrderId}/quote`, {
     token: mechanicToken,
     body: buildQuotePayload(stockItemId, mechanicServiceId),
     expectedStatus: 200,
@@ -69,7 +69,7 @@ function updateQuote(mechanicToken, serviceOrderId, stockItemId, mechanicService
 }
 
 function approveBudget(customerToken, serviceOrderId, scenarioName) {
-  return getData('POST', `/api/v1/service-orders/${serviceOrderId}/budget-response`, {
+  return getData('POST', `/api/service-orders/${serviceOrderId}/budget-response`, {
     token: customerToken,
     body: { approved: true },
     expectedStatus: 200,
@@ -78,7 +78,7 @@ function approveBudget(customerToken, serviceOrderId, scenarioName) {
 }
 
 function requestApproval(mechanicToken, serviceOrderId, scenarioName) {
-  return getData('POST', `/api/v1/service-orders/${serviceOrderId}/request-approval`, {
+  return getData('POST', `/api/service-orders/${serviceOrderId}/request-approval`, {
     token: mechanicToken,
     expectedStatus: 200,
     tags: { flow: 'service_order_request_approval', scenario: scenarioName },
@@ -86,7 +86,7 @@ function requestApproval(mechanicToken, serviceOrderId, scenarioName) {
 }
 
 function finishService(mechanicToken, serviceOrderId, scenarioName) {
-  return getData('POST', `/api/v1/service-orders/${serviceOrderId}/finish`, {
+  return getData('POST', `/api/service-orders/${serviceOrderId}/finish`, {
     token: mechanicToken,
     expectedStatus: 200,
     tags: { flow: 'service_order_finish', scenario: scenarioName },
@@ -94,7 +94,7 @@ function finishService(mechanicToken, serviceOrderId, scenarioName) {
 }
 
 function deliverVehicle(receptionistToken, serviceOrderId, scenarioName) {
-  return getData('POST', `/api/v1/service-orders/${serviceOrderId}/deliver`, {
+  return getData('POST', `/api/service-orders/${serviceOrderId}/deliver`, {
     token: receptionistToken,
     expectedStatus: 200,
     tags: { flow: 'service_order_deliver', scenario: scenarioName },
@@ -134,7 +134,7 @@ function searchStockItems(token, scenarioName) {
 }
 
 function searchServiceOrders(token, scenarioName) {
-  getData('GET', '/api/v1/service-orders/search?size=5', {
+  getData('GET', '/api/service-orders/search?size=5', {
     token,
     expectedStatus: 200,
     tags: { flow: 'service_orders_search', scenario: scenarioName },
@@ -173,7 +173,7 @@ export function runServiceOrderJourney(context, scenarioName) {
     finishService(context.mechanicToken, serviceOrderId, scenarioName);
     deliverVehicle(context.receptionistToken, serviceOrderId, scenarioName);
 
-    request('GET', `/api/v1/service-orders/${serviceOrderId}`, {
+    request('GET', `/api/service-orders/${serviceOrderId}`, {
       token: customerToken,
       expectedStatus: 200,
       tags: { flow: 'service_order_get_by_id', scenario: scenarioName },

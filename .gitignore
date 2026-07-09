@@ -1,4 +1,8 @@
 infra/.terraform/
+infra/kind/.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
 
 HELP.md
 target/

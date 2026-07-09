@@ -90,7 +90,7 @@ O ciclo de vida da OS é protegido rigorosamente por perfil funcional:
 * **Listar OS Ativas** (`GET /`): `RECEPTIONIST`, `MECHANIC` — ordenação por prioridade, exclui finalizadas e entregues
 * **Consultar Status** (`GET /{id}/status`): `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
 * **Visualizar OS Completa** (`GET /{id}`): `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
-* **Buscar OS** (`GET /search`): `RECEPTIONIST`, `MECHANIC`, `SALESPERSON`, `CUSTOMER`
+* **Buscar OS** (`GET /search`): `RECEPTIONIST`, `MECHANIC`, `CUSTOMER`
 * **Métricas** (`GET /metrics`): `RECEPTIONIST`, `MECHANIC`
 
 ---
@@ -131,7 +131,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
   "phone": "11988887777"
 }
 ```
-*(Nota: Valores aceitos para `role`: `ADMIN`, `RECEPTIONIST`, `MECHANIC`, `WAREHOUSE_CLERK`, `SALESPERSON`, `BUYER`, `CUSTOMER`)*
+*(Nota: Valores aceitos para `role`: `ADMIN`, `RECEPTIONIST`, `MECHANIC`, `WAREHOUSE_CLERK`, `BUYER`, `CUSTOMER`)*
 
 ### 2. Veículos
 **Permissão:** `ADMIN`, `RECEPTIONIST`
@@ -195,6 +195,7 @@ Abaixo estão exemplos de payloads validados para criação e edição de dados 
   "mechanicExternalId": "UUID_DO_MECANICO"
 }
 ```
+*(Nota: `labors` e `parts` também podem ser enviados opcionalmente já na criação, para pré-popular o orçamento — a OS continua nascendo como `RECEIVED` de qualquer forma. A transição para `DIAGNOSIS` só acontece via `PUT /{id}/quote`, abaixo.)*
 
 **B. Inclusão de Orçamento (`DIAGNOSIS`)**
 * **Endpoint:** `PUT /api/service-orders/{id}/quote`

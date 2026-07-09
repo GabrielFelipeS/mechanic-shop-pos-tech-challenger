@@ -257,7 +257,7 @@ public class ServiceOrderController {
 	@Operation(summary = "Search service orders", description = "Returns a paginated list of service orders filtered by license plate, status or responsible mechanic.")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
-	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'SALESPERSON', 'CUSTOMER')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'MECHANIC', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> search(
 		@RequestParam(name = "licensePlate", required = false) String licensePlate,
 		@RequestParam(name = "status", required = false) ServiceOrderStatusEnum status,

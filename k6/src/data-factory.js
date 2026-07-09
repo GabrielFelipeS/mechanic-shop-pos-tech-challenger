@@ -55,7 +55,7 @@ export function buildVehiclePayload(ownerId) {
   const letters = String.fromCharCode(65 + randomInt(0, 25));
 
   return {
-    licensePlate: `K${letters}${letters}${randomInt(0, 9)}${letters}${randomInt(10, 99)}`,
+    licensePlate: `${letters}${letters}${letters}${randomInt(0, 9)}${letters}${randomInt(10, 99)}`,
     brand: pickOne(brands),
     model: `${pickOne(models)} ${randomInt(1, 5)}.${randomInt(0, 9)}`,
     year: randomInt(2018, 2026),

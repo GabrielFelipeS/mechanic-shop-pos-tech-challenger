@@ -49,8 +49,8 @@ public class ServiceOrderNotificationListener {
 			);
 			case PENDING_APPROVAL -> {
 				String token = order.getApprovalToken();
-				String approveUrl = baseUrl + "/api/v1/service-orders/budget-approval?token=" + token + "&approved=true";
-				String rejectUrl  = baseUrl + "/api/v1/service-orders/budget-approval?token=" + token + "&approved=false";
+				String approveUrl = baseUrl + "/api/service-orders/budget-approval?token=" + token + "&approved=true";
+				String rejectUrl  = baseUrl + "/api/service-orders/budget-approval?token=" + token + "&approved=false";
 				String body = "O diagnóstico do seu veículo foi concluído e o orçamento está pronto para sua análise.\n\n" +
 						"OS: " + order.getExternalId() + "\n" +
 						"Total do Orçamento: R$ " + order.getBudget().getTotalAmount() + "\n\n" +

@@ -217,7 +217,7 @@ class ServiceOrderServiceTest {
 			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.SENT);
 			assertThat(updated.getEstimatedCompletionDate()).isNotNull();
 			assertThat(updated.getEstimatedCompletionDays()).isEqualTo(1);
-			assertThat(updated.getApprovalDate()).isNotNull();
+			assertThat(updated.getApprovalDate()).isNull();
 
 			verify(eventPublisher).publishEvent(eventCaptor.capture());
 
@@ -276,6 +276,7 @@ class ServiceOrderServiceTest {
 
 			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.CANCELED);
 			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.REJECTED);
+			assertThat(updated.getApprovalDate()).isNull();
 		}
 	}
 
