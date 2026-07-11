@@ -29,7 +29,7 @@ Para rodar e testar este projeto localmente, você precisará de:
 
 ---
 
-## Como Executar o Projeto Localmente
+## Como Executar o Projeto Localmente (Docker)
 
 1. **Clone o repositório no GitHub**
 2. **Rode o comando do Docker:**
@@ -47,7 +47,15 @@ Para rodar e testar este projeto localmente, você precisará de:
 | **BUYER** | `buyer@shop.com` | Usuário de compras do sistema. |
 | **CUSTOMER** | `emailquearecepcaoselecionar@shop.com` | Visualiza Ordens de Serviço, aprova/reprova orçamento, vê registro do veículo. *(**Essa Role não é criada como um usuário padrão a recepção é quem precisa criar o usuário com essa role específica**)|
 
+## Como Executar o Projeto Localmente (Terraform)
 ---
+1. **Clone o repositório no GitHub**
+2. **Entre na pasta infra, após isso entre na pasta kind**
+3. **Rode os comando do Terraform:**
+```bash
+terraform init
+terraform apply -auto-approve
+```
 
 ## 🔐 Permissões e Endpoints (Matriz de Acesso)
 
