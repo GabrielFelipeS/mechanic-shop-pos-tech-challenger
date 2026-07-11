@@ -1,5 +1,5 @@
 
-# Infra2
+# Infra Kind
 
 Stack Terraform 100% local para subir um cluster Kubernetes com Kind e aplicar todos os manifests da aplicacao via `terraform apply`, sem `kubectl apply`.
 
@@ -10,6 +10,21 @@ Stack Terraform 100% local para subir um cluster Kubernetes com Kind e aplicar t
 - Exponibiliza o Mailpit em `http://localhost:8025` e SMTP em `localhost:1025`.
 - Aplica namespace, configuracoes, PostgreSQL, Mailpit, API e `metrics-server` com `kubectl_manifest`.
 
+## Infraestrutura provisionada
+
+- Cluster Kubernetes local com `kind`, composto por 1 node `control-plane` e 1 node `worker`.
+- Namespace dedicado `mechanic-shop` para os recursos da aplicacao.
+- API `mechanic-shop-backend` em `Deployment`, com `Service` `NodePort` na porta `8080` e imagem configuravel via Terraform.
+- `HorizontalPodAutoscaler` da API com minimo de 1 replica, maximo de 10 e alvo medio de 80% de CPU.
+- Banco PostgreSQL interno ao cluster com `Service` `ClusterIP`, `StatefulSet` de 1 replica e volume persistente de `2Gi`.
+- Mailpit em `Deployment`, exposto por `Service` `NodePort` para UI HTTP (`8025`) e SMTP (`1025`).
+- `ConfigMap` e `Secrets` para configuracao da aplicacao, credenciais do PostgreSQL e senha padrao dos usuarios seed.
+- `metrics-server` instalado em `kube-system`, com RBAC, `Service`, `Deployment` e `APIService` para suportar HPA e consultas de metricas.
+- Mapeamento de portas do host para o cluster:
+  - API: `localhost:8080` -> `NodePort 30080`
+  - Mailpit UI: `localhost:8025` -> `NodePort 30025`
+  - Mailpit SMTP: `localhost:1025` -> `NodePort 31025`
+
 ## Pre-requisitos
 
 - Docker instalado e em execucao.
@@ -19,7 +34,7 @@ Stack Terraform 100% local para subir um cluster Kubernetes com Kind e aplicar t
 ## Estrutura
 
 ```text
-infra2/
+kind/
 ├── cluster.tf
 ├── locals.tf
 ├── manifests.tf
@@ -35,7 +50,7 @@ infra2/
 ## Como usar
 
 ```bash
-cd infra2
+cd infra/kind
 terraform init
 terraform apply
 ```
