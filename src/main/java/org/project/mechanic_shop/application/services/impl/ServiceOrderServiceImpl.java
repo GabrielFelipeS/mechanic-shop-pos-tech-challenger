@@ -375,15 +375,17 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 	}
 
 	private User resolveAuthenticatedCustomer() {
-		if (!isAuthenticatedAsCustomer()) return null;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (!isAuthenticatedAsCustomer(auth)) return null;
 
-		String authenticatedEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-		return userService.findByEmail(authenticatedEmail);
+		return userService.findByEmail(auth.getName());
 	}
 
 	private boolean isAuthenticatedAsCustomer() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		return isAuthenticatedAsCustomer(SecurityContextHolder.getContext().getAuthentication());
+	}
 
+	private boolean isAuthenticatedAsCustomer(Authentication auth) {
 		return auth != null &&
 			auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + UserRoleEnum.CUSTOMER));
 	}

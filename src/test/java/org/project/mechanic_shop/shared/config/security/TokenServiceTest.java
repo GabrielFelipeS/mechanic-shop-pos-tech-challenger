@@ -3,8 +3,10 @@ package org.project.mechanic_shop.shared.config.security;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.auth0.jwt.JWT;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -32,12 +34,14 @@ class TokenServiceTest {
 	}
 
 	@Test
-	void shouldExpireApproximatelyTwoHoursFromNowRegardlessOfServerTimeZone() {
-		String token = tokenService.generateToken("user@test.com");
+	void shouldExpireExactlyTwoHoursAfterGeneration() {
+		Instant fixedNow = Instant.parse("2024-01-01T10:00:00Z");
+		TokenService fixedClockTokenService = new TokenService(Clock.fixed(fixedNow, ZoneOffset.UTC));
+		ReflectionTestUtils.setField(fixedClockTokenService, "secret", "test-secret");
+
+		String token = fixedClockTokenService.generateToken("user@test.com");
 		Instant expiresAt = JWT.decode(token).getExpiresAtAsInstant();
 
-		Duration lifetime = Duration.between(Instant.now(), expiresAt);
-
-		assertThat(lifetime.toMinutes()).isBetween(119L, 121L);
+		assertThat(expiresAt).isEqualTo(fixedNow.plus(Duration.ofHours(2)));
 	}
 }

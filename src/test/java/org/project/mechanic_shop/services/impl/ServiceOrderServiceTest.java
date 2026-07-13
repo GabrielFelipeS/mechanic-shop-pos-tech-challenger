@@ -698,7 +698,7 @@ class ServiceOrderServiceTest {
 		order.setCustomerComplaint("Ruido");
 		order.setOdometerReading(100000);
 		order.setStatus(ServiceOrderStatusEnum.RECEIVED);
-		order.setCreatedAt(java.time.LocalDateTime.now().minusDays(1));
+		order.setCreatedAt(java.time.LocalDateTime.of(2024, java.time.Month.JANUARY, 1, 10, 0));
 		order.setBudget(budget());
 		return order;
 	}
