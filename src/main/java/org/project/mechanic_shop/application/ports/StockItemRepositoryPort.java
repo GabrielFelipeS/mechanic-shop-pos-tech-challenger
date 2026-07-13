@@ -10,5 +10,6 @@ public interface StockItemRepositoryPort {
 	StockItem save(StockItem item);
 	Optional<StockItem> findByCode(String code);
 	Optional<StockItem> findByExternalId(UUID externalId);
+	Optional<StockItem> findWithLockByExternalId(UUID externalId);
 	Page<StockItem> search(String code, String name, Pageable pageable);
 }

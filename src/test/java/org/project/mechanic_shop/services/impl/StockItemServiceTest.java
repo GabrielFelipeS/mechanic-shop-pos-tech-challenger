@@ -201,7 +201,7 @@ class StockItemServiceTest {
 			item.setQuantity(10);
 			item.setPendingDemand(2);
 
-			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(item));
+			when(repository.findWithLockByExternalId(externalId)).thenReturn(Optional.of(item));
 
 			service.withdrawStock(externalId, 4);
 
@@ -220,7 +220,7 @@ class StockItemServiceTest {
 			item.setPendingDemand(1);
 			ArgumentCaptor<OutOfStockEvent> eventCaptor = ArgumentCaptor.forClass(OutOfStockEvent.class);
 
-			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(item));
+			when(repository.findWithLockByExternalId(externalId)).thenReturn(Optional.of(item));
 
 			service.withdrawStock(externalId, 5);
 

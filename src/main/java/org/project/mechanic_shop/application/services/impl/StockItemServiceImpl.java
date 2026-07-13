@@ -75,7 +75,9 @@ public class StockItemServiceImpl implements StockItemService {
 	@Override
 	@Transactional
 	public void withdrawStock(UUID externalId, Integer requestedQuantity) {
-		StockItem item = findByExternalId(externalId);
+		StockItem item = repository
+			.findWithLockByExternalId(externalId)
+			.orElseThrow(() -> new EntityNotFoundException("Part not found for External ID: " + externalId));
 		int currentStock = item.getQuantity();
 
 		int missingQuantity = requestedQuantity - currentStock;

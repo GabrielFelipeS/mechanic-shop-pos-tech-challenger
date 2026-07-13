@@ -176,6 +176,39 @@ class VehicleControllerIT extends AbstractIntegrationTest {
 			.andExpect(jsonPath("$.data.content[0].ownerName").value(owner.getName()));
 	}
 
+	@Test
+	void shouldSearchVehiclesByOwnerIdUsingPersistedData() throws Exception {
+		User firstOwner = userRepository.save(
+			buildUser("81731234060", "Dono Um", "owner.vehicle.search-owner-1@test.com", "11999991006")
+		);
+		User secondOwner = userRepository.save(
+			buildUser("93453224031", "Dono Dois", "owner.vehicle.search-owner-2@test.com", "11999991007")
+		);
+		Vehicle firstOwnerVehicle = vehicleRepository.save(buildVehicle("QRS4T56", "Honda", "Civic", firstOwner));
+		vehicleRepository.save(buildVehicle("UVW7X89", "Renault", "Kwid", secondOwner));
+
+		mockMvc
+			.perform(
+				get("/api/vehicles/search").with(AuthUtil.admin()).param("ownerId", firstOwner.getExternalId().toString())
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+			.andExpect(jsonPath("$.message").value("success"))
+			.andExpect(jsonPath("$.data.content.length()").value(1))
+			.andExpect(jsonPath("$.data.content[0].externalId").value(firstOwnerVehicle.getExternalId().toString()))
+			.andExpect(jsonPath("$.data.content[0].ownerName").value(firstOwner.getName()));
+	}
+
+	@Test
+	void shouldReturnEmptyPageWhenOwnerIdDoesNotExist() throws Exception {
+		mockMvc
+			.perform(
+				get("/api/vehicles/search").with(AuthUtil.admin()).param("ownerId", java.util.UUID.randomUUID().toString())
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.content.length()").value(0));
+	}
+
 	private User buildUser(String document, String name, String email, String phone) {
 		User user = new User();
 		user.setDocument(document);

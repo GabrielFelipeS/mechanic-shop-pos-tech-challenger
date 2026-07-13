@@ -5,8 +5,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
+import org.project.mechanic_shop.infrastructure.jpa.entities.UserJpaEntity;
 import org.project.mechanic_shop.infrastructure.jpa.entities.VehicleJpaEntity;
 import org.project.mechanic_shop.infrastructure.jpa.mappers.VehicleJpaMapper;
+import org.project.mechanic_shop.infrastructure.jpa.repositories.UserJpaRepository;
 import org.project.mechanic_shop.infrastructure.jpa.repositories.VehicleJpaRepository;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Repository;
 public class VehicleRepositoryAdapter implements VehicleRepositoryPort {
 
 	private final VehicleJpaRepository jpaRepository;
+	private final UserJpaRepository userJpaRepository;
 	private final VehicleJpaMapper mapper;
 
 	@Override
@@ -44,10 +47,12 @@ public class VehicleRepositoryAdapter implements VehicleRepositoryPort {
 		probe.setModel(model);
 
 		if (ownerId != null) {
-			Optional<VehicleJpaEntity> ownerProbeOpt = jpaRepository.findByExternalId(ownerId);
-			if (ownerProbeOpt.isEmpty()) return Page.empty(pageable);
-			VehicleJpaEntity ownerProbe = new VehicleJpaEntity();
-			ownerProbe.setId(ownerProbeOpt.get().getOwner() != null ? ownerProbeOpt.get().getOwner().getId() : null);
+			Optional<UserJpaEntity> ownerOpt = userJpaRepository.findByExternalId(ownerId);
+			if (ownerOpt.isEmpty()) return Page.empty(pageable);
+
+			UserJpaEntity ownerJpa = new UserJpaEntity();
+			ownerJpa.setId(ownerOpt.get().getId());
+			probe.setOwner(ownerJpa);
 		}
 
 		ExampleMatcher matcher = ExampleMatcher.matching()

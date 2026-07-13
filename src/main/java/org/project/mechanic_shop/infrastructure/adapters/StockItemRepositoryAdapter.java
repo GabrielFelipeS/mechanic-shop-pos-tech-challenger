@@ -37,6 +37,11 @@ public class StockItemRepositoryAdapter implements StockItemRepositoryPort {
 	}
 
 	@Override
+	public Optional<StockItem> findWithLockByExternalId(UUID externalId) {
+		return jpaRepository.findWithLockByExternalId(externalId).map(mapper::toDomain);
+	}
+
+	@Override
 	public Page<StockItem> search(String code, String name, Pageable pageable) {
 		StockItemJpaEntity probe = new StockItemJpaEntity();
 		probe.setCode(code);
