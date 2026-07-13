@@ -82,6 +82,12 @@ public class GlobalExceptionHandler {
 		return ErrorResponse.forbidden("Access denied.");
 	}
 
+	@ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+	@ResponseStatus(HttpStatus.FORBIDDEN)
+	public ErrorResponse handleSpringAccessDeniedException(org.springframework.security.access.AccessDeniedException e) {
+		return ErrorResponse.forbidden("Access denied.");
+	}
+
 	@ExceptionHandler(DuplicatedRegisterException.class)
 	@ResponseStatus(HttpStatus.CONFLICT)
 	public ErrorResponse handleDuplicatedResgisterException(DuplicatedRegisterException e) {

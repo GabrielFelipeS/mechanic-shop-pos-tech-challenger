@@ -22,12 +22,16 @@ import org.project.mechanic_shop.domain.events.NewServiceOrderEvent;
 import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.domain.enums.BudgetStatusEnum;
 import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
+import org.project.mechanic_shop.domain.enums.UserRoleEnum;
 import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -229,6 +233,8 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			.findByExternalId(externalId)
 			.orElseThrow(() -> new EntityNotFoundException(SERVICE_ORDER_NOT_FOUND_MSG));
 
+		assertCustomerOwnsOrder(order);
+
 		if (order.getStatus() != ServiceOrderStatusEnum.PENDING_APPROVAL) {
 			throw new IllegalStateException("Cannot process budget response. Order is currently: " + order.getStatus());
 		}
@@ -324,12 +330,16 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 	@Override
 	@Transactional(readOnly = true)
 	public ServiceOrder findByExternalId(UUID externalId) {
-		return serviceOrderRepository
+		ServiceOrder order = serviceOrderRepository
 			.findByExternalId(externalId)
 			.orElseThrow(() -> {
 				log.warn("Service Order not found. Target External ID: {}", externalId);
 				return new EntityNotFoundException("Service Order not found for External ID: " + externalId);
 			});
+
+		assertCustomerOwnsOrder(order);
+
+		return order;
 	}
 
 	@Override
@@ -342,7 +352,40 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 	) {
 		log.info("Searching service orders with filters - licensePlate: {}, status: {}", licensePlate, status);
 
-		return serviceOrderRepository.search(licensePlate, status, mechanic, pageable);
+		User ownerFilter = resolveAuthenticatedCustomer();
+
+		return serviceOrderRepository.search(licensePlate, status, mechanic, ownerFilter, pageable);
+	}
+
+	/**
+	 * When the caller is authenticated as CUSTOMER, service orders are only visible/actionable
+	 * for the vehicle owner. Staff roles (ADMIN, RECEPTIONIST, MECHANIC) are unrestricted.
+	 */
+	private void assertCustomerOwnsOrder(ServiceOrder order) {
+		if (!isAuthenticatedAsCustomer()) return;
+
+		String authenticatedEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+		String ownerEmail = order.getVehicle() != null && order.getVehicle().getOwner() != null
+			? order.getVehicle().getOwner().getEmail()
+			: null;
+
+		if (ownerEmail == null || !ownerEmail.equalsIgnoreCase(authenticatedEmail)) {
+			throw new AccessDeniedException("You can only access your own service orders.");
+		}
+	}
+
+	private User resolveAuthenticatedCustomer() {
+		if (!isAuthenticatedAsCustomer()) return null;
+
+		String authenticatedEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+		return userService.findByEmail(authenticatedEmail);
+	}
+
+	private boolean isAuthenticatedAsCustomer() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+		return auth != null &&
+			auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + UserRoleEnum.CUSTOMER));
 	}
 
 	@Override

@@ -23,5 +23,11 @@ public interface ServiceOrderRepositoryPort {
 		ServiceOrderStatusEnum received,
 		Pageable pageable
 	);
-	Page<ServiceOrder> search(String licensePlate, ServiceOrderStatusEnum status, User mechanic, Pageable pageable);
+	Page<ServiceOrder> search(
+		String licensePlate,
+		ServiceOrderStatusEnum status,
+		User mechanic,
+		User owner,
+		Pageable pageable
+	);
 }

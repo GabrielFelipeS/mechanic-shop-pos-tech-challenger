@@ -11,6 +11,8 @@ public interface UserService {
 
 	User findByExternalId(UUID externalId);
 
+	User findByEmail(String email);
+
 	Page<User> search(String document, String name, String email, String role, Pageable pageable);
 
 	List<User> findByRoles(List<String> roles);

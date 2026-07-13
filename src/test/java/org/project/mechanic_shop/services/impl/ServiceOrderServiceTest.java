@@ -1,6 +1,7 @@
 package org.project.mechanic_shop.services.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -76,6 +82,18 @@ class ServiceOrderServiceTest {
 			userService,
 			stockItemService,
 			mechanicServiceCatalog
+		);
+	}
+
+	@AfterEach
+	void clearSecurityContext() {
+		SecurityContextHolder.clearContext();
+	}
+
+	private void authenticateAsCustomer(String email) {
+		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+		SecurityContextHolder.getContext().setAuthentication(
+			new UsernamePasswordAuthenticationToken(email, null, authorities)
 		);
 	}
 
@@ -278,6 +296,40 @@ class ServiceOrderServiceTest {
 			assertThat(updated.getBudget().getStatus()).isEqualTo(BudgetStatusEnum.REJECTED);
 			assertThat(updated.getApprovalDate()).isNull();
 		}
+
+		@Test
+		void shouldAllowOwningCustomerToRespondToBudget() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			String ownerEmail = order.getVehicle().getOwner().getEmail();
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+			authenticateAsCustomer(ownerEmail);
+
+			var updated = service.processBudgetResponse(externalId, false);
+
+			assertThat(updated.getStatus()).isEqualTo(ServiceOrderStatusEnum.CANCELED);
+		}
+
+		@Test
+		void shouldDenyCustomerRespondingToSomeoneElsesBudget() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			authenticateAsCustomer("someone-else@test.com");
+
+			assertThatThrownBy(() -> service.processBudgetResponse(externalId, true))
+				.isInstanceOf(AccessDeniedException.class);
+
+			verify(repository, never()).save(any(ServiceOrder.class));
+			verify(stockItemService, never()).withdrawStock(any(UUID.class), any(Integer.class));
+		}
 	}
 
 	@Nested
@@ -349,6 +401,31 @@ class ServiceOrderServiceTest {
 			assertThatThrownBy(() -> service.findByExternalId(externalId))
 				.isInstanceOf(EntityNotFoundException.class)
 				.hasMessage("Service Order not found for External ID: " + externalId);
+		}
+
+		@Test
+		void shouldAllowCustomerToViewTheirOwnServiceOrder() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			String ownerEmail = order.getVehicle().getOwner().getEmail();
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			authenticateAsCustomer(ownerEmail);
+
+			var found = service.findByExternalId(externalId);
+
+			assertThat(found).isSameAs(order);
+		}
+
+		@Test
+		void shouldDenyCustomerViewingSomeoneElsesServiceOrder() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			authenticateAsCustomer("someone-else@test.com");
+
+			assertThatThrownBy(() -> service.findByExternalId(externalId)).isInstanceOf(AccessDeniedException.class);
 		}
 	}
 
@@ -481,12 +558,34 @@ class ServiceOrderServiceTest {
 			Pageable pageable = PageRequest.of(0, 10);
 			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(order));
 
-			when(repository.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable)).thenReturn(expectedPage);
+			when(
+				repository.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, null, pageable)
+			).thenReturn(expectedPage);
 
 			var result = service.search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, pageable, user);
 
 			assertThat(result).isEqualTo(expectedPage);
-			verify(repository).search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, pageable);
+			verify(repository).search("ABC1234", ServiceOrderStatusEnum.PENDING_APPROVAL, user, null, pageable);
+		}
+
+		@Test
+		void shouldForceOwnerFilterWhenAuthenticatedAsCustomer() {
+			var order = serviceOrder();
+			var customer = UserHelper.generateUser();
+			customer.setRole("CUSTOMER");
+			customer.setEmail("customer@test.com");
+			Pageable pageable = PageRequest.of(0, 10);
+			Page<ServiceOrder> expectedPage = new PageImpl<>(List.of(order));
+
+			authenticateAsCustomer("customer@test.com");
+
+			when(userService.findByEmail("customer@test.com")).thenReturn(customer);
+			when(repository.search(null, null, null, customer, pageable)).thenReturn(expectedPage);
+
+			var result = service.search(null, null, pageable, null);
+
+			assertThat(result).isEqualTo(expectedPage);
+			verify(repository).search(null, null, null, customer, pageable);
 		}
 	}
 

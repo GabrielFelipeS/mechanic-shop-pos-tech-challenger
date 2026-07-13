@@ -1,6 +1,7 @@
 package org.project.mechanic_shop.services.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -48,6 +54,18 @@ class UserServiceTest {
 		userService = new UserServiceImpl(userRepository, userValidator, passwordEncoder);
 	}
 
+	@AfterEach
+	void clearSecurityContext() {
+		SecurityContextHolder.clearContext();
+	}
+
+	private void authenticateAs(String role) {
+		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+		SecurityContextHolder.getContext().setAuthentication(
+			new UsernamePasswordAuthenticationToken("staff@test.com", null, authorities)
+		);
+	}
+
 	@Nested
 	class Create {
 
@@ -76,6 +94,58 @@ class UserServiceTest {
 			assertThatThrownBy(() -> userService.create(user)).isInstanceOf(IllegalArgumentException.class);
 
 			verify(userRepository, never()).save(any());
+		}
+
+		@Test
+		void shouldAllowReceptionistToCreateCustomer() {
+			var user = UserHelper.generateUser();
+			user.setRole("CUSTOMER");
+
+			when(userRepository.save(user)).thenReturn(user);
+			authenticateAs("RECEPTIONIST");
+
+			var userSave = userService.create(user);
+
+			assertThat(userSave).usingRecursiveAssertion().ignoringAllNullFields().isEqualTo(user);
+			verify(userRepository).save(user);
+		}
+
+		@Test
+		void shouldDenyReceptionistCreatingAdmin() {
+			var user = UserHelper.generateUser();
+			user.setRole("ADMIN");
+
+			authenticateAs("RECEPTIONIST");
+
+			assertThatThrownBy(() -> userService.create(user)).isInstanceOf(AccessDeniedException.class);
+
+			verify(userRepository, never()).save(any());
+		}
+
+		@Test
+		void shouldDenyReceptionistCreatingStaffRoles() {
+			var user = UserHelper.generateUser();
+			user.setRole("MECHANIC");
+
+			authenticateAs("RECEPTIONIST");
+
+			assertThatThrownBy(() -> userService.create(user)).isInstanceOf(AccessDeniedException.class);
+
+			verify(userRepository, never()).save(any());
+		}
+
+		@Test
+		void shouldAllowAdminToCreateAnyRole() {
+			var user = UserHelper.generateUser();
+			user.setRole("ADMIN");
+
+			when(userRepository.save(user)).thenReturn(user);
+			authenticateAs("ADMIN");
+
+			var userSave = userService.create(user);
+
+			assertThat(userSave).usingRecursiveAssertion().ignoringAllNullFields().isEqualTo(user);
+			verify(userRepository).save(user);
 		}
 	}
 

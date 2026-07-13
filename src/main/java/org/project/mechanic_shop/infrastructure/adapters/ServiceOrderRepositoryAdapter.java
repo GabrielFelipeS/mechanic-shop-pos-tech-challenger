@@ -67,7 +67,13 @@ public class ServiceOrderRepositoryAdapter implements ServiceOrderRepositoryPort
 	}
 
 	@Override
-	public Page<ServiceOrder> search(String licensePlate, ServiceOrderStatusEnum status, User mechanic, Pageable pageable) {
+	public Page<ServiceOrder> search(
+		String licensePlate,
+		ServiceOrderStatusEnum status,
+		User mechanic,
+		User owner,
+		Pageable pageable
+	) {
 		ServiceOrderJpaEntity probe = new ServiceOrderJpaEntity();
 		probe.setStatus(status);
 
@@ -77,11 +83,21 @@ public class ServiceOrderRepositoryAdapter implements ServiceOrderRepositoryPort
 			probe.setResponsibleMechanic(mechanicJpa);
 		}
 
+		VehicleJpaEntity vehicleProbe = null;
+
 		if (licensePlate != null && !licensePlate.isBlank()) {
-			VehicleJpaEntity vehicleProbe = new VehicleJpaEntity();
+			vehicleProbe = new VehicleJpaEntity();
 			vehicleProbe.setLicensePlate(licensePlate);
-			probe.setVehicle(vehicleProbe);
 		}
+
+		if (owner != null) {
+			if (vehicleProbe == null) vehicleProbe = new VehicleJpaEntity();
+			UserJpaEntity ownerJpa = new UserJpaEntity();
+			ownerJpa.setId(owner.getId());
+			vehicleProbe.setOwner(ownerJpa);
+		}
+
+		if (vehicleProbe != null) probe.setVehicle(vehicleProbe);
 
 		ExampleMatcher matcher = ExampleMatcher.matching()
 			.withIgnorePaths("id", "externalId", "odometerReading", "totalAmount", "createdAt", "createdFor", "lastUpdatedAt", "lastUpdatedFor")
