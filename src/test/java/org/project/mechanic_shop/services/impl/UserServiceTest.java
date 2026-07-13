@@ -204,9 +204,26 @@ class UserServiceTest {
 			InOrder inOrder = inOrder(userRepository, userValidator, userRepository);
 
 			inOrder.verify(userRepository).findByExternalId(externalId);
-			inOrder.verify(userValidator).validateUpdateEligibility(userFind);
+			inOrder.verify(userValidator).validateUpdateEligibility(userFind, userToUpdate);
 			inOrder.verify(userValidator).validate(userFind);
 			inOrder.verify(userRepository).save(userFind);
+		}
+
+		@Test
+		void shouldReactivateAnInactiveUserWhenUpdateSetsActiveTrue() {
+			UUID externalId = UUID.randomUUID();
+			var userFind = UserHelper.generateUser();
+			userFind.setActive(false);
+
+			var userToUpdate = UserHelper.generateUser();
+			userToUpdate.setActive(true);
+
+			when(userRepository.findByExternalId(externalId)).thenReturn(Optional.of(userFind));
+			when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+			var userUpdated = userService.update(externalId, userToUpdate);
+
+			assertThat(userUpdated.getActive()).isTrue();
 		}
 
 		@Test

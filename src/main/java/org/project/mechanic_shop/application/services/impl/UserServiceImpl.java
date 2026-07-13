@@ -106,7 +106,7 @@ public class UserServiceImpl implements UserService {
 
 		log.info("Updating User with ID: {}", obj.getId());
 
-		validator.validateUpdateEligibility(obj);
+		validator.validateUpdateEligibility(obj, update);
 
 		obj.setName(update.getName());
 		obj.setEmail(update.getEmail());

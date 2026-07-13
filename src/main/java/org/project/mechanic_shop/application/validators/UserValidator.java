@@ -22,12 +22,19 @@ public class UserValidator {
 		}
 	}
 
-	public void validateUpdateEligibility(User obj) {
-		if (obj.getId() == null) {
+	/**
+	 * Editing an inactive user is blocked, except when the update itself is reactivating
+	 * the account (active=true) — otherwise a deactivated user could never be reactivated.
+	 */
+	public void validateUpdateEligibility(User current, User update) {
+		if (current.getId() == null) {
 			throw new IllegalArgumentException("You cannot update an object without an ID");
 		}
 
-		if (Boolean.FALSE.equals(obj.getActive())) {
+		boolean isCurrentlyInactive = Boolean.FALSE.equals(current.getActive());
+		boolean isReactivating = Boolean.TRUE.equals(update.getActive());
+
+		if (isCurrentlyInactive && !isReactivating) {
 			throw new IllegalArgumentException("You cannot update an inactive object");
 		}
 	}

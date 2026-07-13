@@ -140,7 +140,7 @@ class CustomerValidatorTest {
 		void shouldNotThrowWhenUserAlreadyExitsIdAndIsActive() {
 			var user = UserHelper.generateUser();
 
-			assertDoesNotThrow(() -> userValidator.validateUpdateEligibility(user));
+			assertDoesNotThrow(() -> userValidator.validateUpdateEligibility(user, user));
 		}
 
 		@Test
@@ -148,19 +148,31 @@ class CustomerValidatorTest {
 			var user = UserHelper.generateUser();
 			user.setId(null);
 
-			assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
+			assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user, user))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessage("You cannot update an object without an ID");
 		}
 
 		@Test
-		void shouldThrowWhenUserIsNotActive() {
-			var user = UserHelper.generateUser();
-			user.setActive(false);
+		void shouldThrowWhenUserIsNotActiveAndUpdateDoesNotReactivate() {
+			var current = UserHelper.generateUser();
+			current.setActive(false);
+			var update = UserHelper.generateUser();
+			update.setActive(false);
 
-			assertThatThrownBy(() -> userValidator.validateUpdateEligibility(user))
+			assertThatThrownBy(() -> userValidator.validateUpdateEligibility(current, update))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessage("You cannot update an inactive object");
+		}
+
+		@Test
+		void shouldNotThrowWhenUserIsNotActiveButUpdateReactivatesIt() {
+			var current = UserHelper.generateUser();
+			current.setActive(false);
+			var update = UserHelper.generateUser();
+			update.setActive(true);
+
+			assertDoesNotThrow(() -> userValidator.validateUpdateEligibility(current, update));
 		}
 	}
 }
