@@ -6,12 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.project.mechanic_shop.application.ports.VehicleRepositoryPort;
 import org.project.mechanic_shop.domain.entities.vehicle.Vehicle;
 import org.project.mechanic_shop.infrastructure.jpa.entities.UserJpaEntity;
-import org.project.mechanic_shop.infrastructure.jpa.entities.VehicleJpaEntity;
 import org.project.mechanic_shop.infrastructure.jpa.mappers.VehicleJpaMapper;
 import org.project.mechanic_shop.infrastructure.jpa.repositories.UserJpaRepository;
 import org.project.mechanic_shop.infrastructure.jpa.repositories.VehicleJpaRepository;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -41,26 +38,20 @@ public class VehicleRepositoryAdapter implements VehicleRepositoryPort {
 
 	@Override
 	public Page<Vehicle> search(String licensePlate, String brand, String model, UUID ownerId, Pageable pageable) {
-		VehicleJpaEntity probe = new VehicleJpaEntity();
-		probe.setLicensePlate(licensePlate);
-		probe.setBrand(brand);
-		probe.setModel(model);
+		Long ownerJpaId = null;
 
 		if (ownerId != null) {
 			Optional<UserJpaEntity> ownerOpt = userJpaRepository.findByExternalId(ownerId);
 			if (ownerOpt.isEmpty()) return Page.empty(pageable);
-
-			UserJpaEntity ownerJpa = new UserJpaEntity();
-			ownerJpa.setId(ownerOpt.get().getId());
-			probe.setOwner(ownerJpa);
+			ownerJpaId = ownerOpt.get().getId();
 		}
 
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths("id", "externalId", "year", "color", "createdAt", "createdFor", "lastUpdatedAt", "lastUpdatedFor")
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
+		String licensePlateFilter = (licensePlate != null && !licensePlate.isBlank()) ? licensePlate : null;
+		String brandFilter = (brand != null && !brand.isBlank()) ? brand : null;
+		String modelFilter = (model != null && !model.isBlank()) ? model : null;
 
-		return jpaRepository.findAll(Example.of(probe, matcher), pageable).map(mapper::toDomain);
+		return jpaRepository
+			.search(licensePlateFilter, brandFilter, modelFilter, ownerJpaId, pageable)
+			.map(mapper::toDomain);
 	}
 }

@@ -14,10 +14,6 @@ public interface StockItemJpaRepository extends JpaRepository<StockItemJpaEntity
 	Optional<StockItemJpaEntity> findByExternalId(UUID externalId);
 	boolean existsByCode(String code);
 
-	/**
-	 * Locks the row for the duration of the caller's transaction so concurrent stock
-	 * withdrawals for the same part are serialized instead of racing on a lost update.
-	 */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select s from StockItemJpaEntity s where s.externalId = :externalId")
 	Optional<StockItemJpaEntity> findWithLockByExternalId(@Param("externalId") UUID externalId);

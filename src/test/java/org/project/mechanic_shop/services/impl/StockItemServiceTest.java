@@ -175,6 +175,40 @@ class StockItemServiceTest {
 		}
 
 		@Test
+		void shouldFullyPayDownPendingDemandWhenRestockCoversIt() {
+			UUID externalId = UUID.randomUUID();
+			var current = stockItem();
+			current.setPendingDemand(5);
+			var update = stockItem();
+			update.setQuantity(20);
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
+			when(repository.save(any(StockItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+			var updated = service.update(externalId, update);
+
+			assertThat(updated.getPendingDemand()).isZero();
+			assertThat(updated.getQuantity()).isEqualTo(15);
+		}
+
+		@Test
+		void shouldPartiallyPayDownPendingDemandWhenRestockIsNotEnough() {
+			UUID externalId = UUID.randomUUID();
+			var current = stockItem();
+			current.setPendingDemand(5);
+			var update = stockItem();
+			update.setQuantity(3);
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(current));
+			when(repository.save(any(StockItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+			var updated = service.update(externalId, update);
+
+			assertThat(updated.getPendingDemand()).isEqualTo(2);
+			assertThat(updated.getQuantity()).isZero();
+		}
+
+		@Test
 		void shouldNotSaveWhenUpdateValidationFails() {
 			UUID externalId = UUID.randomUUID();
 			var current = stockItem();
@@ -203,8 +237,9 @@ class StockItemServiceTest {
 
 			when(repository.findWithLockByExternalId(externalId)).thenReturn(Optional.of(item));
 
-			service.withdrawStock(externalId, 4);
+			boolean isShortage = service.withdrawStock(externalId, 4);
 
+			assertThat(isShortage).isFalse();
 			assertThat(item.getQuantity()).isEqualTo(6);
 			assertThat(item.getPendingDemand()).isEqualTo(2);
 
@@ -222,8 +257,9 @@ class StockItemServiceTest {
 
 			when(repository.findWithLockByExternalId(externalId)).thenReturn(Optional.of(item));
 
-			service.withdrawStock(externalId, 5);
+			boolean isShortage = service.withdrawStock(externalId, 5);
 
+			assertThat(isShortage).isTrue();
 			assertThat(item.getQuantity()).isZero();
 			assertThat(item.getPendingDemand()).isEqualTo(3);
 

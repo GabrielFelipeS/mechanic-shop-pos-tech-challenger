@@ -45,9 +45,6 @@ public class UserServiceImpl implements UserService {
 		return repository.save(obj);
 	}
 
-	/**
-	 * RECEPTIONIST may only self-service CUSTOMER sign-ups; only ADMIN can grant staff roles.
-	 */
 	private void assertCallerCanAssignRole(User obj) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null) return;

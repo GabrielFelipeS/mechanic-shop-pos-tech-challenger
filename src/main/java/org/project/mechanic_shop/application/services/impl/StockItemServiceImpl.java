@@ -63,7 +63,7 @@ public class StockItemServiceImpl implements StockItemService {
 		obj.setCode(update.getCode());
 		obj.setName(update.getName());
 		obj.setDescription(update.getDescription());
-		obj.setQuantity(update.getQuantity());
+		applyRestock(obj, update.getQuantity());
 		obj.setCostPrice(update.getCostPrice());
 		obj.setSalePrice(update.getSalePrice());
 
@@ -72,17 +72,26 @@ public class StockItemServiceImpl implements StockItemService {
 		return repository.save(obj);
 	}
 
+	private void applyRestock(StockItem obj, Integer newQuantity) {
+		int pendingDemand = obj.getPendingDemand() != null ? obj.getPendingDemand() : 0;
+		int fulfilled = Math.min(pendingDemand, newQuantity);
+
+		obj.setPendingDemand(pendingDemand - fulfilled);
+		obj.setQuantity(newQuantity - fulfilled);
+	}
+
 	@Override
 	@Transactional
-	public void withdrawStock(UUID externalId, Integer requestedQuantity) {
+	public boolean withdrawStock(UUID externalId, Integer requestedQuantity) {
 		StockItem item = repository
 			.findWithLockByExternalId(externalId)
 			.orElseThrow(() -> new EntityNotFoundException("Part not found for External ID: " + externalId));
 		int currentStock = item.getQuantity();
 
 		int missingQuantity = requestedQuantity - currentStock;
+		boolean isShortage = missingQuantity > 0;
 
-		if (missingQuantity > 0) {
+		if (isShortage) {
 			item.setQuantity(0);
 			item.setPendingDemand(item.getPendingDemand() + missingQuantity);
 
@@ -92,5 +101,6 @@ public class StockItemServiceImpl implements StockItemService {
 		}
 
 		repository.save(item);
+		return isShortage;
 	}
 }

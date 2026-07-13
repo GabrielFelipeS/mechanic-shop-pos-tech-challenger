@@ -175,7 +175,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
 			log.info("Auto-updating status: RECEIVED -> DIAGNOSIS");
 			eventPublisher.publishEvent(new ServiceOrderStatusChangedEvent(
-					order.getExternalId(),
+					order,
 					ServiceOrderStatusEnum.RECEIVED,
 					ServiceOrderStatusEnum.DIAGNOSIS));
 		}
@@ -215,7 +215,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		eventPublisher.publishEvent(
 			new ServiceOrderStatusChangedEvent(
-				updatedOrder.getExternalId(),
+				order,
 				oldStatus,
 				ServiceOrderStatusEnum.PENDING_APPROVAL
 			)
@@ -245,9 +245,13 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 			order.getBudget().setStatus(BudgetStatusEnum.APPROVED);
 
 			log.info("Budget Approved! Triggering stock withdrawal for {} items", order.getStockItems().size());
+			boolean anyPartMissing = false;
 			for (ServiceOrderStockItem item : order.getStockItems()) {
-				stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
+				boolean isShortage = stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
+				anyPartMissing = anyPartMissing || isShortage;
 			}
+
+			adjustEstimatedDeadlineForStockAvailability(order, anyPartMissing);
 
 			order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
@@ -259,7 +263,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 		eventPublisher.publishEvent(
-			new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, order.getStatus())
+			new ServiceOrderStatusChangedEvent(order, oldStatus, order.getStatus())
 		);
 
 		return updatedOrder;
@@ -288,7 +292,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		eventPublisher.publishEvent(
 			new ServiceOrderStatusChangedEvent(
-				updatedOrder.getExternalId(),
+				order,
 				oldStatus,
 				ServiceOrderStatusEnum.COMPLETED
 			)
@@ -318,7 +322,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		eventPublisher.publishEvent(
 			new ServiceOrderStatusChangedEvent(
-				updatedOrder.getExternalId(),
+				order,
 				oldStatus,
 				ServiceOrderStatusEnum.DELIVERED
 			)
@@ -357,10 +361,6 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		return serviceOrderRepository.search(licensePlate, status, mechanic, ownerFilter, pageable);
 	}
 
-	/**
-	 * When the caller is authenticated as CUSTOMER, service orders are only visible/actionable
-	 * for the vehicle owner. Staff roles (ADMIN, RECEPTIONIST, MECHANIC) are unrestricted.
-	 */
 	private void assertCustomerOwnsOrder(ServiceOrder order) {
 		if (!isAuthenticatedAsCustomer()) return;
 
@@ -431,9 +431,14 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 		if (approved) {
 			order.getBudget().setStatus(BudgetStatusEnum.APPROVED);
 			log.info("Budget approved via email! Withdrawing stock for {} items.", order.getStockItems().size());
+			boolean anyPartMissing = false;
 			for (ServiceOrderStockItem item : order.getStockItems()) {
-				stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
+				boolean isShortage = stockItemService.withdrawStock(item.getStockItem().getExternalId(), item.getQuantity());
+				anyPartMissing = anyPartMissing || isShortage;
 			}
+
+			adjustEstimatedDeadlineForStockAvailability(order, anyPartMissing);
+
 			order.setApprovalDate(LocalDateTime.now(ZoneId.systemDefault()));
 			order.setStatus(ServiceOrderStatusEnum.IN_PROGRESS);
 		} else {
@@ -444,7 +449,7 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 
 		ServiceOrder updatedOrder = serviceOrderRepository.save(order);
 		eventPublisher.publishEvent(
-			new ServiceOrderStatusChangedEvent(updatedOrder.getExternalId(), oldStatus, order.getStatus())
+			new ServiceOrderStatusChangedEvent(order, oldStatus, order.getStatus())
 		);
 
 		return updatedOrder;
@@ -460,22 +465,31 @@ public class ServiceOrderServiceImpl implements ServiceOrderService {
 	}
 
 	private void setEstimatedDeadline(ServiceOrder order) {
+		int baseDays = calculateBaseDays(order);
+
+		order.setEstimatedCompletionDays(baseDays);
+		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(baseDays));
+	}
+
+	private void adjustEstimatedDeadlineForStockAvailability(ServiceOrder order, boolean isPartMissing) {
+		if (!isPartMissing) return;
+
+		int totalEstimatedDays = calculateBaseDays(order) + 3;
+
+		order.setEstimatedCompletionDays(totalEstimatedDays);
+		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(totalEstimatedDays));
+
+		log.info("Estimated deadline extended by 3 days: a part shortage was found while withdrawing stock.");
+	}
+
+	private int calculateBaseDays(ServiceOrder order) {
 		long totalServiceMinutes = order
 			.getLabors()
 			.stream()
 			.mapToLong(l -> (long) l.getMechanicService().getEstimatedTimeMinutes() * l.getQuantity())
 			.sum();
 
-		boolean isPartMissing = order
-				.getStockItems()
-				.stream()
-				.anyMatch(item -> item.getQuantity() > item.getStockItem().getQuantity());
-
-		int baseDays = (int) Math.ceil(totalServiceMinutes / 480.0);
-		int totalEstimatedDays = baseDays + (isPartMissing ? 3 : 0);
-
-		order.setEstimatedCompletionDays(totalEstimatedDays);
-		order.setEstimatedCompletionDate(LocalDateTime.now(ZoneId.systemDefault()).plusDays(totalEstimatedDays));
+		return (int) Math.ceil(totalServiceMinutes / 480.0);
 	}
 
 	private void recordActualFinish(ServiceOrder order) {

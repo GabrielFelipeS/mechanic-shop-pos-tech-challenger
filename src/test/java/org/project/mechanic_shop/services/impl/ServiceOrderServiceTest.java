@@ -244,6 +244,24 @@ class ServiceOrderServiceTest {
 			assertThat(event.oldStatus()).isEqualTo(ServiceOrderStatusEnum.DIAGNOSIS);
 			assertThat(event.newStatus()).isEqualTo(ServiceOrderStatusEnum.PENDING_APPROVAL);
 		}
+
+		@Test
+		void shouldNotGuessAPartShortagePenaltyAtQuoteTime() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.DIAGNOSIS);
+			order.addLabor(serviceOrderLabor(MechanicServiceHelper.generateMechanicService(), 2));
+			var shortItem = stockItem();
+			shortItem.setQuantity(1);
+			order.addStockItem(serviceOrderStockItem(shortItem, 5, new BigDecimal("20.00")));
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+
+			var updated = service.requestCustomerApproval(externalId);
+
+			assertThat(updated.getEstimatedCompletionDays()).isEqualTo(1);
+		}
 	}
 
 	@Nested
@@ -329,6 +347,44 @@ class ServiceOrderServiceTest {
 
 			verify(repository, never()).save(any(ServiceOrder.class));
 			verify(stockItemService, never()).withdrawStock(any(UUID.class), any(Integer.class));
+		}
+
+		@Test
+		void shouldExtendEstimatedDeadlineWhenWithdrawalRevealsAShortage() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.addLabor(serviceOrderLabor(MechanicServiceHelper.generateMechanicService(), 2));
+			order.addStockItem(serviceOrderStockItem(stockItem(), 5, new BigDecimal("20.00")));
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+			when(stockItemService.withdrawStock(any(UUID.class), any(Integer.class))).thenReturn(true);
+
+			var updated = service.processBudgetResponse(externalId, true);
+
+			assertThat(updated.getEstimatedCompletionDays()).isEqualTo(4);
+			assertThat(updated.getEstimatedCompletionDate()).isNotNull();
+		}
+
+		@Test
+		void shouldNotExtendEstimatedDeadlineWhenStockIsFullyAvailable() {
+			UUID externalId = UUID.randomUUID();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.addLabor(serviceOrderLabor(MechanicServiceHelper.generateMechanicService(), 2));
+			order.addStockItem(serviceOrderStockItem(stockItem(), 5, new BigDecimal("20.00")));
+			order.setEstimatedCompletionDays(1);
+
+			when(repository.findByExternalId(externalId)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+			when(stockItemService.withdrawStock(any(UUID.class), any(Integer.class))).thenReturn(false);
+
+			var updated = service.processBudgetResponse(externalId, true);
+
+			assertThat(updated.getEstimatedCompletionDays()).isEqualTo(1);
 		}
 	}
 
@@ -545,6 +601,25 @@ class ServiceOrderServiceTest {
 				.hasMessageContaining("IN_PROGRESS");
 
 			verify(repository, never()).save(any(ServiceOrder.class));
+		}
+
+		@Test
+		void shouldExtendEstimatedDeadlineWhenWithdrawalRevealsAShortage() {
+			String token = UUID.randomUUID().toString();
+			var order = serviceOrder();
+			order.setStatus(ServiceOrderStatusEnum.PENDING_APPROVAL);
+			order.getBudget().setStatus(BudgetStatusEnum.SENT);
+			order.setApprovalToken(token);
+			order.addLabor(serviceOrderLabor(MechanicServiceHelper.generateMechanicService(), 2));
+			order.addStockItem(serviceOrderStockItem(stockItem(), 5, new BigDecimal("20.00")));
+
+			when(repository.findByApprovalToken(token)).thenReturn(Optional.of(order));
+			when(repository.save(order)).thenReturn(order);
+			when(stockItemService.withdrawStock(any(UUID.class), any(Integer.class))).thenReturn(true);
+
+			var updated = service.processBudgetResponseByToken(token, true);
+
+			assertThat(updated.getEstimatedCompletionDays()).isEqualTo(4);
 		}
 	}
 

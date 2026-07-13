@@ -314,6 +314,44 @@ class ServiceOrderControllerIT extends AbstractIntegrationTest {
 			.andExpect(jsonPath("$.data.content[0].status").value(savedOrder.getStatus().name()));
 	}
 
+	@Test
+	void shouldListActiveServiceOrdersUsingPersistedData() throws Exception {
+		User owner = userRepository.save(
+			buildUser(
+				"33566778899",
+				"Cliente Lista Ordem",
+				"customer.service-order.list-active@test.com",
+				UserRoleEnum.CUSTOMER
+			)
+		);
+		User mechanic = userRepository.save(
+			buildUser(
+				"88997766554",
+				"Mecanico Lista Ordem",
+				"mechanic.service-order.list-active@test.com",
+				UserRoleEnum.MECHANIC
+			)
+		);
+		Vehicle vehicle = vehicleRepository.save(buildVehicle("RST4U56", owner));
+		ServiceOrder savedOrder = serviceOrderRepository.save(buildServiceOrder(vehicle, mechanic, "Suspensao ruidosa"));
+
+		mockMvc
+			.perform(get("/api/service-orders").with(AuthUtil.admin()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+			.andExpect(jsonPath("$.message").value("success"))
+			.andExpect(
+				jsonPath("$.data.content[?(@.externalId=='" + savedOrder.getExternalId() + "')].licensePlate").value(
+					vehicle.getLicensePlate()
+				)
+			)
+			.andExpect(
+				jsonPath("$.data.content[?(@.externalId=='" + savedOrder.getExternalId() + "')].customerName").value(
+					owner.getName()
+				)
+			);
+	}
+
 	private User buildUser(String document, String name, String email, UserRoleEnum role) {
 		User user = new User();
 		user.setDocument(document);

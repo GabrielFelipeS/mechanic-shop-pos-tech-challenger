@@ -7,12 +7,9 @@ import org.project.mechanic_shop.domain.events.ServiceOrderStatusChangedEvent;
 import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.application.ports.EmailService;
-import org.project.mechanic_shop.application.services.ServiceOrderService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -22,16 +19,14 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ServiceOrderNotificationListener {
 
 	private final EmailService emailService;
-	private final ServiceOrderService serviceOrderService;
 
 	@Value("${app.base-url}")
 	private String baseUrl;
 
 	@Async
-	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleStatusChangedEvent(ServiceOrderStatusChangedEvent event) {
-		ServiceOrder order = serviceOrderService.findByExternalId(event.serviceOrderExternalId());
+		ServiceOrder order = event.serviceOrder();
 		User customer = order.getVehicle().getOwner();
 		User mechanic = order.getResponsibleMechanic();
 
@@ -95,7 +90,6 @@ public class ServiceOrderNotificationListener {
 	}
 
 	@Async
-	@Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleNewOrderEvent(NewServiceOrderEvent event) {
 

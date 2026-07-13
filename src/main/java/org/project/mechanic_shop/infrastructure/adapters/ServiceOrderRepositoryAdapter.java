@@ -8,13 +8,8 @@ import org.project.mechanic_shop.application.ports.ServiceOrderRepositoryPort;
 import org.project.mechanic_shop.domain.entities.service_order.ServiceOrder;
 import org.project.mechanic_shop.domain.entities.user.User;
 import org.project.mechanic_shop.domain.enums.ServiceOrderStatusEnum;
-import org.project.mechanic_shop.infrastructure.jpa.entities.ServiceOrderJpaEntity;
-import org.project.mechanic_shop.infrastructure.jpa.entities.UserJpaEntity;
-import org.project.mechanic_shop.infrastructure.jpa.entities.VehicleJpaEntity;
 import org.project.mechanic_shop.infrastructure.jpa.mappers.ServiceOrderJpaMapper;
 import org.project.mechanic_shop.infrastructure.jpa.repositories.ServiceOrderJpaRepository;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -74,37 +69,10 @@ public class ServiceOrderRepositoryAdapter implements ServiceOrderRepositoryPort
 		User owner,
 		Pageable pageable
 	) {
-		ServiceOrderJpaEntity probe = new ServiceOrderJpaEntity();
-		probe.setStatus(status);
+		String licensePlateFilter = (licensePlate != null && !licensePlate.isBlank()) ? licensePlate : null;
+		Long mechanicId = mechanic != null ? mechanic.getId() : null;
+		Long ownerId = owner != null ? owner.getId() : null;
 
-		if (mechanic != null) {
-			UserJpaEntity mechanicJpa = new UserJpaEntity();
-			mechanicJpa.setId(mechanic.getId());
-			probe.setResponsibleMechanic(mechanicJpa);
-		}
-
-		VehicleJpaEntity vehicleProbe = null;
-
-		if (licensePlate != null && !licensePlate.isBlank()) {
-			vehicleProbe = new VehicleJpaEntity();
-			vehicleProbe.setLicensePlate(licensePlate);
-		}
-
-		if (owner != null) {
-			if (vehicleProbe == null) vehicleProbe = new VehicleJpaEntity();
-			UserJpaEntity ownerJpa = new UserJpaEntity();
-			ownerJpa.setId(owner.getId());
-			vehicleProbe.setOwner(ownerJpa);
-		}
-
-		if (vehicleProbe != null) probe.setVehicle(vehicleProbe);
-
-		ExampleMatcher matcher = ExampleMatcher.matching()
-			.withIgnorePaths("id", "externalId", "odometerReading", "totalAmount", "createdAt", "createdFor", "lastUpdatedAt", "lastUpdatedFor")
-			.withIgnoreNullValues()
-			.withIgnoreCase()
-			.withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-		return jpaRepository.findAll(Example.of(probe, matcher), pageable).map(mapper::toDomain);
+		return jpaRepository.search(licensePlateFilter, status, mechanicId, ownerId, pageable).map(mapper::toDomain);
 	}
 }

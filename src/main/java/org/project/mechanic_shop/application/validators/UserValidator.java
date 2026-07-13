@@ -22,10 +22,6 @@ public class UserValidator {
 		}
 	}
 
-	/**
-	 * Editing an inactive user is blocked, except when the update itself is reactivating
-	 * the account (active=true) — otherwise a deactivated user could never be reactivated.
-	 */
 	public void validateUpdateEligibility(User current, User update) {
 		if (current.getId() == null) {
 			throw new IllegalArgumentException("You cannot update an object without an ID");
