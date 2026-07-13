@@ -44,4 +44,20 @@ public record UserManDto(
 	@NotBlank(message = "Phone number is required.")
 	@Size(min = 10, max = 15, message = "Phone number must be between 10 and 15 characters.")
 	String phone
-) implements Serializable {}
+) implements Serializable {
+
+
+	private static final String PROTECTED = "[PROTECTED]" ;
+
+	@Override
+	public String toString() {
+		return "UserManDto[document=" + document +
+			", name=" + name +
+			", email=" + email +
+			", role=" + role +
+			", active=" + active +
+			", password= "+ PROTECTED +
+			", phone=" + phone +
+			"]";
+	}
+}
