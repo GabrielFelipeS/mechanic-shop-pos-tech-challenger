@@ -10,7 +10,7 @@
 #   terraform apply -var-file=envs/aws-academy.tfvars
 
 newrelic_account_id = 1234567
-newrelic_api_key    = "NRAK-<sua-user-api-key>" # User API key
+newrelic_api_key    = "" # User API key
 newrelic_region     = "US"
 
 alert_email      = "equipe@example.com"
