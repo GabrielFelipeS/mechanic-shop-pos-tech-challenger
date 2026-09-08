@@ -15,5 +15,5 @@ app_image = "kaizenn/mechanic-shop-backend:obs-b9c00c1"
 # node_desired_size = 2
 
 # Observabilidade (opcional).
-# newrelic_license_key = "xxxxxxxxNRAL"
+# newrelic_license_key = ""
 # newrelic_app_name    = "mechanic-shop (AWS Academy)"

@@ -1,16 +1,5 @@
-# Copie para terraform.tfvars e preencha. NUNCA comite o terraform.tfvars.
-#
-# Este arquivo carrega apenas credenciais e preferencias da conta. A identidade
-# do ambiente monitorado (app_name / cluster_name / workload_name) vem de
-# envs/<ambiente>.tfvars, que espelha o que a infra realmente reporta:
-#
-#   cp terraform.tfvars.example terraform.tfvars
-#   terraform init
-#   terraform workspace select -or-create aws-academy
-#   terraform apply -var-file=envs/aws-academy.tfvars
-
 newrelic_account_id = 1234567
-newrelic_api_key    = "" # User API key
+newrelic_api_key    = "" 
 newrelic_region     = "US"
 
 alert_email      = "equipe@example.com"
