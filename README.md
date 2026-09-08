@@ -47,6 +47,29 @@ Para rodar e testar este projeto localmente, você precisará de:
 | **BUYER** | `buyer@shop.com` | Usuário de compras do sistema. |
 | **CUSTOMER** | `emailquearecepcaoselecionar@shop.com` | Visualiza Ordens de Serviço, aprova/reprova orçamento, vê registro do veículo. *(**Essa Role não é criada como um usuário padrão a recepção é quem precisa criar o usuário com essa role específica**)|
 
+## 🚪 API Gateway (Kong)
+
+O `docker compose up --build` também sobe um **Kong** (modo *DB-less*, configuração declarativa em `kong/kong.yml`) na frente da aplicação, expondo um único ponto de entrada público:
+
+* **Proxy do Kong:** `http://localhost:8000` — é por aqui que as rotas sensíveis ao cliente (`CUSTOMER`) são protegidas por um plugin `jwt`, além da autorização já feita pelo Spring (`@PreAuthorize`). As rotas cobertas são: `POST /api/service-orders/{id}/budget-response`, `GET /api/service-orders/{id}`, `GET /api/service-orders/{id}/status`, `GET /api/service-orders/search`, `GET /api/vehicles/{id}` e `GET /api/vehicles/search`.
+* **Demais rotas** (login, o link público de aprovação de orçamento por e-mail, Swagger, actuator, endpoints exclusivos de staff) passam pelo Kong sem exigência extra de token — a autorização por role continua sendo feita inteiramente pelo Spring.
+* `http://127.0.0.1:8080` (Spring direto) e o Admin API do Kong (`http://127.0.0.1:8001`) ficam expostos só em loopback — úteis para debug local, mas não são o caminho de acesso "oficial".
+
+### Function Serverless de login por CPF
+
+Um módulo standalone em `functions/cpf-login-function/` (sem dependência de Spring, HTTP puro da JDK) expõe, através do Kong, um login alternativo para clientes usando apenas o CPF:
+
+```
+POST http://localhost:8000/functions/cpf-login
+Content-Type: application/json
+
+{ "document": "52998224725" }
+```
+
+* Valida o CPF (checksum mod-11) — CPF inválido retorna `400`.
+* Consulta um endpoint interno da própria API (`GET /internal/customers/{document}/status`, protegido por um header secreto compartilhado, **não exposto pelo Kong**) para checar se existe um usuário `CUSTOMER` com aquele documento e se está ativo — se não, retorna `404`.
+* Em caso de sucesso, assina um JWT com o mesmo segredo/algoritmo/emissor (`mechanic-shop-api`, HS256) usado pelo login tradicional, com o e-mail do cliente como subject — o token retornado é **idêntico em formato** ao emitido por `/api/auth/login` e funciona nas mesmas rotas protegidas.
+
 ## Como Executar o Projeto Localmente (Terraform)
 ---
 1. **Clone o repositório no GitHub**
@@ -61,6 +84,7 @@ terraform apply -auto-approve
 
 Abaixo está o mapeamento de quais perfis podem acessar cada rota da API. Lembre-se de realizar o login (`/api/auth/login`) com o usuário adequado para obter o token JWT.
 **Nota:** O perfil `ADMIN` possui permissão global em todas as rotas restritas.
+**Nota:** As rotas voltadas ao `CUSTOMER` (marcadas abaixo) também exigem um JWT válido na camada do **API Gateway (Kong)** — veja a seção [🚪 API Gateway (Kong)](#-api-gateway-kong).
 
 ### 1. Autenticação (Livre)
 * `POST /api/auth/login`: Realiza o login e retorna o Token JWT.

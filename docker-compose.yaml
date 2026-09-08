@@ -57,7 +57,10 @@ services:
     container_name: springapp
     restart: always
     ports:
-      - "8080:8080"
+      # Loopback-only: the real public entrypoint is the Kong proxy on :8000.
+      # This stays reachable from the host so Swagger and local verification
+      # (comparing "via Kong" vs "direct to springapp") both keep working.
+      - "127.0.0.1:8080:8080"
     networks:
       - mechanic-shop-network
     depends_on:
@@ -67,6 +70,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mechanic-shop-db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-me}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-internal-shared-secret-change-me}
 
       SEED_DEFAULT_PASSWORD: ${SEED_DEFAULT_PASSWORD}
       SEED_WH_NAME: ${SEED_WH_NAME}
@@ -99,6 +105,28 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+
+  kong:
+    image: kong:3.7
+    container_name: kong
+    restart: always
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      - "8000:8000"
+      # Admin API stays loopback-only, it should never be casually public.
+      - "127.0.0.1:8001:8001"
+    networks:
+      - mechanic-shop-network
+    depends_on:
+      - springapp
 
 volumes:
   postgres_data:

@@ -39,7 +39,7 @@ public class VehicleController {
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC')")
+	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> findById(@PathVariable UUID id) {
 		log.info("Find vehicle by External ID: {}", id);
 
@@ -91,7 +91,7 @@ public class VehicleController {
 	@Operation(summary = "Search vehicles", description = "Returns a paginated list of vehicles filtered by license plate, brand, model or owner.")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Paginated result")
 	@GetMapping("/search")
-	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC')")
+	@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'MECHANIC', 'CUSTOMER')")
 	public ResponseEntity<ApiResponse> search(
 		@RequestParam(name = "licensePlate", required = false) String licensePlate,
 		@RequestParam(name = "brand", required = false) String brand,

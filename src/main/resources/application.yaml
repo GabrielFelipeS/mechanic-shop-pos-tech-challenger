@@ -50,7 +50,11 @@ springdoc:
 api:
   security:
     token:
-      secret: "234235negknsdg#$$@#@#"
+      secret: ${JWT_SECRET:local-dev-jwt-secret-change-me}
+
+internal:
+  api:
+    secret: ${INTERNAL_API_SECRET:internal-shared-secret-change-me}
 
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
