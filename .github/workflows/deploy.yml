@@ -68,7 +68,48 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy Terraform
+        env:
+          # Injeta a license key do New Relic no Secret da aplicacao e habilita o
+          # nri-bundle no cluster. Sem o secret configurado o deploy segue sem
+          # observabilidade em vez de falhar.
+          TF_VAR_newrelic_license_key: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          TF_VAR_environment: production
+          TF_VAR_newrelic_app_name: mechanic-shop (Production)
         run: |
           cd ./infra/kind
+          terraform init
+          terraform apply -auto-approve
+
+  # Dashboards, politicas de alerta e monitor de uptime da conta New Relic.
+  # Roda depois do cluster para que as entidades ja existam quando o dashboard
+  # for aberto. Nao falha o pipeline quando os segredos nao estao configurados.
+  deploy-observability:
+    needs:
+      - deploy-k8s
+
+    runs-on: ubuntu-latest
+
+    # Definido no nivel do job para que o `if` do step possa consultar o valor
+    # (o contexto `secrets` nao esta disponivel em `if` de step).
+    env:
+      TF_VAR_newrelic_api_key: ${{ secrets.NEW_RELIC_API_KEY }}
+      TF_VAR_newrelic_account_id: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
+      TF_VAR_health_check_url: ${{ vars.HEALTH_CHECK_URL }}
+      TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+      TF_VAR_environment: production
+      TF_VAR_app_name: mechanic-shop (Production)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Apply New Relic dashboards and alerts
+        if: env.TF_VAR_newrelic_api_key != '' && env.TF_VAR_newrelic_account_id != ''
+        run: |
+          cd ./infra/newrelic/terraform
           terraform init
           terraform apply -auto-approve
