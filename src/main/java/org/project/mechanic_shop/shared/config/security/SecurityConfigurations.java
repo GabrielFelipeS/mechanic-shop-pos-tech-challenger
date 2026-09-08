@@ -35,7 +35,7 @@ public class SecurityConfigurations {
 					.permitAll()
 					.requestMatchers(HttpMethod.GET, "/api/service-orders/budget-approval")
 					.permitAll()
-					.requestMatchers(HttpMethod.GET, "/actuator/health")
+					.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**", "/actuator/info")
 					.permitAll()
 					.requestMatchers(
 						"/v2/api-docs/**",

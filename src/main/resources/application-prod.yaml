@@ -1,0 +1,25 @@
+# Production-only overrides. Activated with SPRING_PROFILES_ACTIVE=prod (see the Kubernetes
+# ConfigMaps). Local development and tests keep the human-readable plain text logs.
+logging:
+  # Structured (JSON) logging in the ECS format. Every MDC entry is emitted as a top-level field,
+  # so the correlationId set by CorrelationIdFilter — and the trace.id/span.id injected by the
+  # New Relic agent — end up queryable in New Relic Logs without any parsing rule.
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        name: ${spring.application.name}
+        environment: ${APP_ENVIRONMENT:production}
+  level:
+    root: INFO
+    org.project.mechanic_shop: INFO
+
+spring:
+  jpa:
+    # SQL statements are captured by the New Relic agent's transaction tracer (obfuscated);
+    # echoing every statement to stdout would only inflate the log ingest bill.
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
