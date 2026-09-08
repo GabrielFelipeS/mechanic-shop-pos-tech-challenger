@@ -1,0 +1,14 @@
+# StorageClass do driver EBS CSI. O EKS nao provisiona mais volumes pelo
+# provisionador in-tree, entao o PVC do PostgreSQL depende desta classe.
+# WaitForFirstConsumer garante que o volume seja criado na mesma AZ do pod.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ${storage_class}
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  type: ${volume_type}
+  encrypted: "true"

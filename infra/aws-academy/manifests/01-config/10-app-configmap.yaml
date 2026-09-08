@@ -9,7 +9,7 @@ data:
   SMTP_ACTIVE: "false"
   SMTP_HOST: "mailpit"
   SMTP_PORT: "1025"
-  APP_BASE_URL: "http://localhost:8080"
+  APP_BASE_URL: "${app_base_url}"
 
   # ---------- Observability ----------
   # Activates application-prod.yaml, which turns on the structured (JSON) log format.

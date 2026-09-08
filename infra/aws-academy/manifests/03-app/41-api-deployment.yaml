@@ -16,7 +16,7 @@ spec:
       containers:
         - name: mechanic-shop-backend
           image: ${app_image}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           envFrom:

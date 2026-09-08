@@ -131,3 +131,41 @@ variable "seed_default_password" {
   default     = "123456"
   sensitive   = true
 }
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+
+variable "environment" {
+  description = "Nome do ambiente reportado na telemetria (local, homolog, prod)."
+  type        = string
+  default     = "local"
+}
+
+variable "newrelic_app_name" {
+  description = "Nome da aplicacao no APM do New Relic. Deve ser distinto por ambiente."
+  type        = string
+  default     = "mechanic-shop (Local)"
+}
+
+variable "newrelic_license_key" {
+  description = <<-EOT
+    Ingest license key do New Relic. Deixe vazio para provisionar o cluster sem observabilidade
+    (o agente Java sobe como no-op e o nri-bundle nao e instalado).
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "newrelic_bundle_version" {
+  description = "Versao do chart Helm nri-bundle. Vazio usa a versao mais recente."
+  type        = string
+  default     = ""
+}
+
+variable "newrelic_low_data_mode" {
+  description = "Reduz o volume de dados enviados pelo nri-bundle (recomendado fora de producao)."
+  type        = bool
+  default     = true
+}

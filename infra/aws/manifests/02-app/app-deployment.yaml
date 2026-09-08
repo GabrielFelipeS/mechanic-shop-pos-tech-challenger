@@ -27,20 +27,55 @@ spec:
                 name: mechanic-shop-app-secret
           ports:
             - containerPort: 8080
+          env:
+            # Kubernetes metadata consumed by the New Relic agent so that APM transactions,
+            # logs and traces are linked to the pod/deployment/cluster in the New Relic UI.
+            - name: NEW_RELIC_METADATA_KUBERNETES_CLUSTER_NAME
+              value: eks-mechanic-shop
+            - name: NEW_RELIC_METADATA_KUBERNETES_NAMESPACE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NEW_RELIC_METADATA_KUBERNETES_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NEW_RELIC_METADATA_KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NEW_RELIC_METADATA_KUBERNETES_DEPLOYMENT_NAME
+              value: mechanic-shop-backend
+            - name: NEW_RELIC_METADATA_KUBERNETES_CONTAINER_NAME
+              value: mechanic-shop-backend
+          # Actuator-backed probes: they check the application (and its datasource, through the
+          # readiness group) instead of merely checking that the TCP port is open.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/readiness
               port: 8080
             initialDelaySeconds: 25
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health/liveness
               port: 8080
             initialDelaySeconds: 40
             periodSeconds: 20
+            failureThreshold: 3
+          # The New Relic Java agent adds roughly 100Mi of heap/metaspace on top of the
+          # application itself; the previous 256Mi limit would OOMKill the pod on startup.
           resources:
             requests:
-              cpu: "50m"
-              memory: "128Mi"
-            limits:
               cpu: "250m"
-              memory: "256Mi"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
