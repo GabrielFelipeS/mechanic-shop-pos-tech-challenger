@@ -20,16 +20,46 @@ variable "newrelic_region" {
   }
 }
 
+# ---------------------------------------------------------------------------
+# Identidade do ambiente monitorado
+#
+# Estes tres valores sao o contrato entre esta stack e as infras (infra/kind,
+# infra/aws, infra/aws-academy): as NRQL abaixo filtram exatamente por eles.
+# Nao tem default de proposito -- um default silencioso e o que fazia o
+# dashboard consultar um appName/clusterName que nenhuma infra reportava.
+# Use os arquivos em envs/*.tfvars, gerados a partir do output
+# "observability_tfvars" de cada infra.
+# ---------------------------------------------------------------------------
+
 variable "app_name" {
-  description = "Nome da aplicacao no APM (deve casar com NEW_RELIC_APP_NAME do ambiente)."
+  description = <<-EOT
+    Nome da aplicacao no APM. Precisa ser identico ao NEW_RELIC_APP_NAME do
+    ambiente (var.newrelic_app_name na infra correspondente).
+  EOT
   type        = string
-  default     = "mechanic-shop (Production)"
 }
 
 variable "cluster_name" {
-  description = "Nome do cluster Kubernetes reportado pelo nri-bundle (global.cluster)."
+  description = <<-EOT
+    Nome do cluster Kubernetes reportado pelo nri-bundle (global.cluster).
+    Precisa ser identico ao output "newrelic_cluster_name" da infra.
+  EOT
   type        = string
-  default     = "eks-mechanic-shop"
+}
+
+variable "namespace" {
+  description = "Namespace Kubernetes da aplicacao."
+  type        = string
+  default     = "mechanic-shop"
+}
+
+variable "workload_name" {
+  description = <<-EOT
+    Nome do Deployment/container da API no cluster. Usado nos filtros de
+    K8sDeploymentSample, K8sContainerSample e K8sPodSample.
+  EOT
+  type        = string
+  default     = "mechanic-shop-backend"
 }
 
 variable "environment" {

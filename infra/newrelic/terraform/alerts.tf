@@ -129,7 +129,7 @@ resource "newrelic_nrql_alert_condition" "k8s_container_memory" {
   violation_time_limit_seconds = 3600
 
   nrql {
-    query = "SELECT average(memoryWorkingSetUtilization) FROM K8sContainerSample WHERE clusterName = '${var.cluster_name}' AND containerName = 'mechanic-shop-backend' FACET podName"
+    query = "SELECT average(memoryWorkingSetUtilization) FROM K8sContainerSample WHERE clusterName = '${var.cluster_name}' AND containerName = '${var.workload_name}' FACET podName"
   }
 
   critical {
@@ -154,7 +154,7 @@ resource "newrelic_nrql_alert_condition" "k8s_container_cpu" {
   violation_time_limit_seconds = 3600
 
   nrql {
-    query = "SELECT average(cpuCoresUtilization) FROM K8sContainerSample WHERE clusterName = '${var.cluster_name}' AND containerName = 'mechanic-shop-backend' FACET podName"
+    query = "SELECT average(cpuCoresUtilization) FROM K8sContainerSample WHERE clusterName = '${var.cluster_name}' AND containerName = '${var.workload_name}' FACET podName"
   }
 
   critical {
@@ -179,7 +179,7 @@ resource "newrelic_nrql_alert_condition" "k8s_pod_not_ready" {
   violation_time_limit_seconds = 3600
 
   nrql {
-    query = "SELECT uniqueCount(podName) FROM K8sPodSample WHERE clusterName = '${var.cluster_name}' AND podName LIKE 'mechanic-shop-backend%' AND status != 'Running'"
+    query = "SELECT uniqueCount(podName) FROM K8sPodSample WHERE clusterName = '${var.cluster_name}' AND podName LIKE '${var.workload_name}%' AND status != 'Running'"
   }
 
   critical {

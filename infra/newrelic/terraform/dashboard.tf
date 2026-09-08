@@ -228,7 +228,7 @@ resource "newrelic_one_dashboard" "mechanic_shop" {
 
       nrql_query {
         account_id = var.newrelic_account_id
-        query      = "SELECT latest(podsAvailable) AS 'Disponiveis', latest(podsDesired) AS 'Desejadas' FROM K8sDeploymentSample WHERE clusterName = '${var.cluster_name}' AND deploymentName = 'mechanic-shop-backend' SINCE 6 hours ago TIMESERIES"
+        query      = "SELECT latest(podsAvailable) AS 'Disponiveis', latest(podsDesired) AS 'Desejadas' FROM K8sDeploymentSample WHERE clusterName = '${var.cluster_name}' AND deploymentName = '${var.workload_name}' SINCE 6 hours ago TIMESERIES"
       }
     }
 

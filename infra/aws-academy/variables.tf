@@ -311,3 +311,19 @@ variable "use_exec_auth" {
   type        = bool
   default     = true
 }
+
+variable "health_check_path" {
+  description = "Path do healthcheck da API, usado no monitor Synthetics da stack de observabilidade."
+  type        = string
+  default     = "/actuator/health"
+}
+
+variable "write_observability_tfvars" {
+  description = <<-EOT
+    Escreve infra/newrelic/terraform/envs/aws-academy.tfvars com o appName,
+    clusterName e health check URL reais deste cluster, para que a stack de
+    dashboards/alertas consulte exatamente o que esta infra reporta.
+  EOT
+  type        = bool
+  default     = true
+}

@@ -90,6 +90,7 @@ teste/
 ├── manifests.tf     # aplica os manifests em ordem
 ├── network.tf       # VPC, subnets, IGW, route table e regra de NodePort
 ├── newrelic.tf      # nri-bundle (opcional)
+├── observability.tf # publica a identidade do ambiente para infra/newrelic/terraform
 ├── outputs.tf
 ├── providers.tf
 ├── variables.tf
@@ -150,9 +151,38 @@ terraform destroy
 | `nodeport_allowed_cidr` | `0.0.0.0/0` | Restrinja ao seu IP publico. |
 | `api_server_allowed_cidr` | `0.0.0.0/0` | Restrinja o endpoint do API server. |
 | `newrelic_license_key` | `""` | Vazio nao instala o `nri-bundle`. |
+| `newrelic_app_name` | `mechanic-shop (AWS Academy)` | `NEW_RELIC_APP_NAME` do agente Java. E o `app_name` que a stack de dashboards consulta. |
+| `write_observability_tfvars` | `true` | Gera `infra/newrelic/terraform/envs/aws-academy.tfvars`. |
+| `health_check_path` | `/actuator/health` | Path monitorado pelo Synthetics. |
 | `app_base_url` | `""` | Vazio usa `http://<ip-publico-do-node>:30080`. |
 | `imds_hop_limit` | `2` | Nao baixe para 1: quebra o `ebs-csi-controller`. |
 | `use_exec_auth` | `true` | `false` usa token estatico de 15min e quebra applies longos. |
+
+## Dashboards e alertas no New Relic
+
+Esta infra manda telemetria (`nri-bundle` + agente Java), mas quem cria
+dashboard, politicas de alerta e monitor de uptime e a stack
+`infra/newrelic/terraform`. As duas se acham por *nome*: as NRQL de la filtram
+por `appName` e `clusterName`, que aqui valem `var.newrelic_app_name` e
+`local.cluster_name` (`eks-${var.project_name}`).
+
+Para nao depender de os dois lados serem editados juntos, o apply desta infra
+escreve o arquivo de identidade que a stack consome:
+
+```bash
+cd infra/aws-academy
+terraform apply                       # gera ../newrelic/terraform/envs/aws-academy.tfvars
+
+cd ../newrelic/terraform
+cp terraform.tfvars.example terraform.tfvars   # account id, API key, alert_email
+terraform init
+terraform workspace select -or-create aws-academy
+terraform apply -var-file=envs/aws-academy.tfvars
+```
+
+Se mudar `project_name`, `newrelic_app_name`, `namespace` ou o `app_node_port`,
+basta reaplicar esta infra e depois a stack: o arquivo e regerado com os valores
+novos e o dashboard continua apontando para o cluster certo.
 
 ## Se algo falhar
 

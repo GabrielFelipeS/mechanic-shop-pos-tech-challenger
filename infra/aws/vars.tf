@@ -51,3 +51,35 @@ variable "newrelic_low_data_mode" {
   type        = bool
   default     = false
 }
+
+# ---------------------------------------------------------------------------
+# Identidade da telemetria
+#
+# Precisa casar com o NEW_RELIC_APP_NAME do
+# manifests/01-config/app-configmap.yaml e com o var.app_name da stack
+# infra/newrelic/terraform.
+# ---------------------------------------------------------------------------
+
+variable "newrelic_app_name" {
+  description = "Nome da aplicacao no APM do New Relic."
+  type        = string
+  default     = "mechanic-shop (Production)"
+}
+
+variable "namespace" {
+  description = "Namespace Kubernetes da aplicacao."
+  type        = string
+  default     = "mechanic-shop"
+}
+
+variable "environment" {
+  description = "Nome do ambiente reportado na telemetria."
+  type        = string
+  default     = "production"
+}
+
+variable "health_check_path" {
+  description = "Path do healthcheck exposto pela API."
+  type        = string
+  default     = "/actuator/health"
+}

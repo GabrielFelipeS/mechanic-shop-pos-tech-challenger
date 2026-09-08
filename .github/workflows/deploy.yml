@@ -73,8 +73,10 @@ jobs:
           # nri-bundle no cluster. Sem o secret configurado o deploy segue sem
           # observabilidade em vez de falhar.
           TF_VAR_newrelic_license_key: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-          TF_VAR_environment: production
-          TF_VAR_newrelic_app_name: mechanic-shop (Production)
+          # Precisa casar com infra/newrelic/terraform/envs/kind.tfvars, que e o
+          # arquivo de identidade consumido pela stack de observabilidade.
+          TF_VAR_environment: local
+          TF_VAR_newrelic_app_name: mechanic-shop (Local)
         run: |
           cd ./infra/kind
           terraform init
@@ -96,8 +98,6 @@ jobs:
       TF_VAR_newrelic_account_id: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
       TF_VAR_health_check_url: ${{ vars.HEALTH_CHECK_URL }}
       TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
-      TF_VAR_environment: production
-      TF_VAR_app_name: mechanic-shop (Production)
 
     steps:
       - uses: actions/checkout@v4
@@ -112,4 +112,7 @@ jobs:
         run: |
           cd ./infra/newrelic/terraform
           terraform init
-          terraform apply -auto-approve
+          # A identidade do ambiente (app_name, cluster_name, workload_name) vem
+          # do arquivo do ambiente, nao de valores repetidos aqui. O job acima
+          # aplica infra/kind, entao o alvo e envs/kind.tfvars.
+          terraform apply -auto-approve -var-file=envs/kind.tfvars
