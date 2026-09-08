@@ -75,11 +75,9 @@ services:
           - "/webjars"
 
   - name: cpf-login-function
-    # TODO: replace with the deployed AWS API Gateway invoke URL for the
-    # cpf-login-lambda function (github.com/GabrielFelipeS/mechanic-shop-pos-tech-challenger-lambda)
-    # once it's deployed. strip_path is false here because the invoke URL's
-    # own stage/path prefix must be preserved as-is.
-    url: https://REPLACE-ME.execute-api.REGION.amazonaws.com/STAGE/cpf-login
+    # AWS API Gateway (HTTP API) invoke URL for the cpf-login-lambda function,
+    # $default stage, route "POST /cpf-login".
+    url: https://tpi1pjo0hh.execute-api.us-east-1.amazonaws.com/cpf-login
     routes:
       - name: cpf-login-route
         strip_path: true
@@ -95,4 +93,4 @@ consumers:
       # users since the issuer never varies per-user.
       - key: mechanic-shop-api
         algorithm: HS256
-        secret: local-dev-jwt-secret-change-me
+        secret: 3f9cd4beba6b4da478ac0d55ffa9bfa056b82f02da0b9527bf2bd7bd02d0cca3
