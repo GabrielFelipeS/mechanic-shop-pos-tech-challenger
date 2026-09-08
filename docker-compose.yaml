@@ -70,6 +70,14 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
+      # Observability. NEW_RELIC_LICENSE_KEY comes from .env (never committed).
+      # SPRING_PROFILES_ACTIVE is left unset locally on purpose so logs stay human-readable;
+      # set it to "prod" if you want to see the JSON log output produced in production.
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: mechanic-shop (Local)
+      NEW_RELIC_LABELS: env:local;service:mechanic-shop
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
+
       SEED_DEFAULT_PASSWORD: ${SEED_DEFAULT_PASSWORD}
       SEED_WH_NAME: ${SEED_WH_NAME}
       SEED_WH_EMAIL: ${SEED_WH_EMAIL}
@@ -141,6 +149,9 @@ services:
     volumes:
       - "/:/host:ro"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      NRIA_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NRIA_DISPLAY_NAME: mechanic-shop-local
     restart: unless-stopped
     networks:
       - newrelic-mechanic-shop
