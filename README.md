@@ -70,6 +70,74 @@ Content-Type: application/json
 * Consulta um endpoint interno da própria API (`GET /internal/customers/{document}/status`, protegido por um header secreto compartilhado, **não exposto pelo Kong**) para checar se existe um usuário `CUSTOMER` com aquele documento e se está ativo — se não, retorna `404`.
 * Em caso de sucesso, assina um JWT com o mesmo segredo/algoritmo/emissor (`mechanic-shop-api`, HS256) usado pelo login tradicional, com o e-mail do cliente como subject — o token retornado é **idêntico em formato** ao emitido por `/api/auth/login` e funciona nas mesmas rotas protegidas.
 
+### 🧪 Como Testar o Kong Localmente
+
+> **Atenção antes de começar:** o `kong/kong.yml` tem o segredo do plugin `jwt` **fixo** (`3f9cd4beba6b4da478ac0d55ffa9bfa056b82f02da0b9527bf2bd7bd02d0cca3`), pois a config declarativa do Kong não suporta variáveis de ambiente. Para que os tokens emitidos pela API sejam aceitos pelo Kong, exporte `JWT_SECRET` com esse mesmo valor **antes** de subir o compose (senão o Kong rejeita até tokens válidos, com `401`/assinatura inválida):
+> ```bash
+> export JWT_SECRET=3f9cd4beba6b4da478ac0d55ffa9bfa056b82f02da0b9527bf2bd7bd02d0cca3
+> docker compose up --build
+> ```
+
+**1. Login (rota livre, sem plugin `jwt` do Kong) — obter um token:**
+```bash
+curl -s -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "mechanic@shop.com", "password": "123456"}'
+```
+Guarde o `token` retornado numa variável:
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "mechanic@shop.com", "password": "123456"}' | jq -r .token)
+```
+
+**2. Rota protegida pelo Kong, sem token → deve retornar `401` (bloqueado pelo Kong, nem chega no Spring):**
+```bash
+curl -i http://localhost:8000/api/vehicles/search
+```
+
+**3. Mesma rota, com token inválido/adulterado → `401` do Kong:**
+```bash
+curl -i http://localhost:8000/api/vehicles/search -H "Authorization: Bearer token.invalido.aqui"
+```
+
+**4. Mesma rota, com token válido → passa pelo Kong e cai na autorização do Spring (`@PreAuthorize`):**
+```bash
+curl -i http://localhost:8000/api/vehicles/search -H "Authorization: Bearer $TOKEN"
+```
+
+**5. Confirmar que o `jwt` plugin só está nas rotas sensíveis ao cliente — uma rota fora da lista (ex.: catálogo de serviços) responde igual, com ou sem token, porque quem barra é só o Spring:**
+```bash
+curl -i http://localhost:8000/api/mechanic-services/search          # 401 do Spring (sem Authorization), não do Kong
+curl -i http://localhost:8000/api/mechanic-services/search -H "Authorization: Bearer $TOKEN"   # 200
+```
+
+**6. Comparar acesso direto ao Spring (sem Kong) vs via Kong, pra provar que o gateway é uma camada extra e não o único ponto de checagem:**
+```bash
+curl -i http://127.0.0.1:8080/api/vehicles/search -H "Authorization: Bearer $TOKEN"   # sem passar pelo Kong, Spring autoriza normalmente
+```
+
+**7. Testar a function serverless de login por CPF via Kong:**
+```bash
+curl -i -X POST http://localhost:8000/functions/cpf-login \
+  -H "Content-Type: application/json" \
+  -d '{"document": "52998224725"}'
+```
+(Precisa existir um usuário `CUSTOMER` com esse CPF cadastrado — veja a nota da tabela de perfis. CPF inválido → `400`; CPF válido mas sem usuário `CUSTOMER` ativo → `404`.)
+
+**8. Confirmar que o endpoint interno usado pela function NÃO é exposto pelo Kong (só acessível direto no Spring, com o header secreto):**
+```bash
+curl -i http://localhost:8000/internal/customers/52998224725/status                     # não existe rota no Kong para isso
+curl -i http://127.0.0.1:8080/internal/customers/52998224725/status \
+  -H "X-Internal-Secret: internal-shared-secret-change-me"                              # 200/404 conforme o Spring valida
+```
+
+**9. Admin API do Kong (só loopback, útil pra inspecionar a config carregada):**
+```bash
+curl -s http://127.0.0.1:8001/routes | jq .
+curl -s http://127.0.0.1:8001/consumers/mechanic-shop-users/jwt | jq .
+```
+
 ## Como Executar o Projeto Localmente (Terraform)
 ---
 1. **Clone o repositório no GitHub**
