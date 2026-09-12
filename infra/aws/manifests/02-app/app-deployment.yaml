@@ -18,7 +18,9 @@ spec:
     spec:
       containers:
         - name: mechanic-shop-backend
-          image: kaizenn/mechanic-shop-backend:latest
+          # Tag de commit, nao `latest`: a tag mutavel esconde qual codigo esta rodando.
+          # Sendo imutavel, IfNotPresent e seguro e evita um round-trip ao registry.
+          image: kaizenn/mechanic-shop-backend:obs-b9c00c1
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

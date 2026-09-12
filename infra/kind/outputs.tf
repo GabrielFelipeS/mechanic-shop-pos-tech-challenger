@@ -10,8 +10,24 @@ output "kubeconfig" {
 }
 
 output "api_url" {
-  description = "URL local da API."
-  value       = "http://localhost:${var.app_host_port}"
+  description = "URL local da API, servida pelo Kong (a API nao e mais exposta diretamente)."
+  value       = "http://localhost:${var.kong_host_port}"
+}
+
+output "kong_proxy_url" {
+  description = <<-EOT
+    URL do proxy do Kong: a unica porta de entrada do cluster. Mesmo valor de
+    api_url, exposto com nome proprio porque todo trafego externo passa por aqui.
+  EOT
+  value       = "http://localhost:${var.kong_host_port}"
+}
+
+output "kong_admin_port_forward_command" {
+  description = <<-EOT
+    A Admin API do Kong e ClusterIP de proposito (expoe a config inteira,
+    inclusive o segredo do JWT). Use port-forward para inspecionar.
+  EOT
+  value       = "kubectl -n ${var.namespace} port-forward svc/kong-admin 8001:8001"
 }
 
 output "mailpit_ui_url" {
@@ -49,6 +65,6 @@ output "observability_tfvars" {
     workload_name = "mechanic-shop-backend"
     environment   = "${var.environment}"
 
-    health_check_url = "http://localhost:${var.app_host_port}/actuator/health"
+    health_check_url = "http://localhost:${var.kong_host_port}/actuator/health"
   EOT
 }

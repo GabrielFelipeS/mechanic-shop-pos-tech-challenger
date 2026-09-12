@@ -55,6 +55,13 @@ O `docker compose up --build` também sobe um **Kong** (modo *DB-less*, configur
 * **Demais rotas** (login, o link público de aprovação de orçamento por e-mail, Swagger, actuator, endpoints exclusivos de staff) passam pelo Kong sem exigência extra de token — a autorização por role continua sendo feita inteiramente pelo Spring.
 * `http://127.0.0.1:8080` (Spring direto) e o Admin API do Kong (`http://127.0.0.1:8001`) ficam expostos só em loopback — úteis para debug local, mas não são o caminho de acesso "oficial".
 
+#### No Kubernetes
+
+As stacks de infraestrutura (`infra/kind`, `infra/aws-academy` e `infra/aws`) sobem o mesmo Kong como `Deployment` DB-less, com o `kong.yml` vindo do `ConfigMap` `kong-declarative-config`. Duas diferenças em relação ao compose:
+
+* o `Service` da API é `ClusterIP` — ali o gateway não é apenas o caminho "oficial", é o **único**: no Kind, `http://localhost:8080` já é o proxy do Kong (`NodePort 30000`), e a API só responde via `kubectl port-forward`;
+* o segredo do plugin `jwt` é templado pelo Terraform a partir de `var.jwt_secret`, que também vira `JWT_SECRET` no `Secret` da aplicação. Como o Kong não expande variáveis de ambiente no arquivo declarativo, essa é a forma de manter API e gateway assinando/validando com o mesmo segredo — se divergirem, o gateway responde `401` a tokens que a API considera válidos.
+
 ### Function Serverless de login por CPF
 
 Um módulo standalone em `functions/cpf-login-function/` (sem dependência de Spring, HTTP puro da JDK) expõe, através do Kong, um login alternativo para clientes usando apenas o CPF:

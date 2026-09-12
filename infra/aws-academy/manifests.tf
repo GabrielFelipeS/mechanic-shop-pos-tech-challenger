@@ -21,6 +21,8 @@ resource "kubectl_manifest" "config" {
     environment           = var.environment
     newrelic_app_name     = var.newrelic_app_name
     newrelic_license_key  = var.newrelic_license_key
+    jwt_secret            = var.jwt_secret
+    cpf_login_url         = var.cpf_login_url
   })
 
   depends_on = [kubectl_manifest.namespaces]
@@ -48,7 +50,6 @@ resource "kubectl_manifest" "app" {
     app_cpu_limit               = var.app_cpu_limit
     app_memory_request          = var.app_memory_request
     app_memory_limit            = var.app_memory_limit
-    app_node_port               = var.app_node_port
     mailpit_ui_node_port        = var.mailpit_ui_node_port
     mailpit_smtp_node_port      = var.mailpit_smtp_node_port
     hpa_min_replicas            = var.hpa_min_replicas
@@ -57,6 +58,14 @@ resource "kubectl_manifest" "app" {
     cluster_name                = local.cluster_name
     storage_class               = var.storage_class
     postgres_storage_size       = var.postgres_storage_size
+    kong_image                  = var.kong_image
+    kong_replicas               = var.kong_replicas
+    kong_node_port              = var.kong_node_port
+    kong_cpu_request            = var.kong_cpu_request
+    kong_cpu_limit              = var.kong_cpu_limit
+    kong_memory_request         = var.kong_memory_request
+    kong_memory_limit           = var.kong_memory_limit
+    kong_config_checksum        = local.kong_config_checksum
   })
 
   depends_on = [kubectl_manifest.config, kubectl_manifest.storage]

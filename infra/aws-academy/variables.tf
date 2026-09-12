@@ -144,10 +144,13 @@ variable "app_image" {
   description = <<-EOT
     Imagem Docker da API. Precisa estar em um registry publico ou no ECR da conta do lab.
 
-    Nao use "latest": a tag publicada pela pipeline e construida a partir do que esta
-    commitado, e os probes destes manifests chamam /actuator/health/readiness, que so
-    e liberado pelo Spring Security nas versoes com a mudanca de observabilidade.
-    Com uma imagem antiga o pod responde 403 no startup probe e entra em CrashLoop.
+    Fixada numa tag de commit de proposito. `latest` ja apontou para uma imagem meses mais
+    antiga que a anterior, derrubando o deploy com 403 no startup probe (ver a secao de
+    problemas comuns no README). Com a tag de commit, `kubectl get po -o jsonpath='{..image}'`
+    diz exatamente o que esta rodando.
+
+    Nao aponte para imagens anteriores a mudanca de observabilidade: os probes chamam
+    /actuator/health/readiness, que so e liberado pelo Spring Security a partir dela.
   EOT
   type        = string
   default     = "kaizenn/mechanic-shop-backend:obs-b9c00c1"
@@ -186,7 +189,7 @@ variable "app_memory_limit" {
 variable "app_base_url" {
   description = <<-EOT
     URL publica da API usada nos links enviados por e-mail. Vazio faz o Terraform montar
-    http://<ip-publico-do-node>:<app_node_port> depois que o node group sobe.
+    http://<ip-publico-do-node>:<kong_node_port> depois que o node group sobe.
   EOT
   type        = string
   default     = ""
@@ -208,12 +211,6 @@ variable "hpa_cpu_average_utilization" {
   description = "Meta media de utilizacao de CPU do HPA."
   type        = number
   default     = 80
-}
-
-variable "app_node_port" {
-  description = "NodePort da API."
-  type        = number
-  default     = 30080
 }
 
 variable "mailpit_ui_node_port" {
@@ -326,4 +323,73 @@ variable "write_observability_tfvars" {
   EOT
   type        = bool
   default     = true
+}
+
+# ---------------------------------------------------------------------------
+# API Gateway (Kong)
+# ---------------------------------------------------------------------------
+
+variable "kong_image" {
+  description = "Imagem do Kong usada como API Gateway."
+  type        = string
+  default     = "kong:3.7"
+}
+
+variable "kong_replicas" {
+  description = "Quantidade de replicas do Kong."
+  type        = number
+  default     = 2
+}
+
+variable "kong_node_port" {
+  description = <<-EOT
+    NodePort do proxy do Kong. E a porta publica da aplicacao nos IPs dos nodes
+    (a regra de ingress do network.tf ja libera a faixa 30000-32767).
+  EOT
+  type        = number
+  default     = 30000
+}
+
+variable "kong_cpu_request" {
+  description = "CPU request do Kong."
+  type        = string
+  default     = "100m"
+}
+
+variable "kong_cpu_limit" {
+  description = "CPU limit do Kong."
+  type        = string
+  default     = "500m"
+}
+
+variable "kong_memory_request" {
+  description = "Memoria request do Kong."
+  type        = string
+  default     = "256Mi"
+}
+
+variable "kong_memory_limit" {
+  description = "Memoria limit do Kong."
+  type        = string
+  default     = "512Mi"
+}
+
+variable "jwt_secret" {
+  description = <<-EOT
+    Segredo HS256 dos tokens da aplicacao. Injetado como JWT_SECRET no Secret da API
+    e como `secret` do consumer jwt na configuracao declarativa do Kong — os dois
+    precisam ser identicos para o gateway validar os tokens emitidos pela API.
+  EOT
+  type        = string
+  default     = "local-dev-jwt-secret-change-me"
+  sensitive   = true
+}
+
+variable "cpf_login_url" {
+  description = <<-EOT
+    Invoke URL da funcao Lambda de login por CPF (API Gateway HTTP API), roteada
+    pelo Kong em /functions/cpf-login.
+  EOT
+  type        = string
+  default     = "https://tpi1pjo0hh.execute-api.us-east-1.amazonaws.com/cpf-login"
 }

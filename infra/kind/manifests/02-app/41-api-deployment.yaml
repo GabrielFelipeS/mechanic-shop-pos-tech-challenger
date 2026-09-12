@@ -16,6 +16,9 @@ spec:
       containers:
         - name: mechanic-shop-backend
           image: ${app_image}
+          # IfNotPresent de proposito, ao contrario das stacks EKS: com load_local_image=true
+          # a imagem e injetada no cluster por `kind load docker-image`, e Always faria o
+          # kubelet ignora-la para tentar puxar do registry.
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

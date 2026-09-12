@@ -53,13 +53,14 @@ O launch template tambem **nao** declara `vpc_security_group_ids` de proposito: 
 - Addon `aws-ebs-csi-driver` + `StorageClass` `ebs-sc` (gp3, `WaitForFirstConsumer`) para o volume do PostgreSQL.
 - `metrics-server` em `kube-system` — o EKS nao instala por padrao e sem ele o HPA nao escala.
 - Namespace `mechanic-shop` com API, PostgreSQL (`StatefulSet` + PVC EBS), Mailpit, `ConfigMap`, `Secrets` e `HorizontalPodAutoscaler`.
+- API Gateway `kong` (`kong:3.7`, modo DB-less) como unica porta de entrada publica. O `Service` da API e `ClusterIP`; so o proxy do Kong tem `NodePort`. A configuracao declarativa e a mesma do `infra/kind` — inclusive a exigencia de que `var.jwt_secret` seja identico ao `JWT_SECRET` da aplicacao.
 - Opcionalmente o `nri-bundle` do New Relic, quando `newrelic_license_key` e informada.
 
 Portas expostas nos IPs publicos dos nodes:
 
 | Servico | NodePort |
 | --- | --- |
-| API | `30080` |
+| API (via Kong) | `30000` |
 | Mailpit UI | `30025` |
 | Mailpit SMTP | `31025` |
 
@@ -117,9 +118,17 @@ Os probes destes manifests chamam `/actuator/health/readiness`. Esse endpoint so
 Por isso o default de `app_image` e uma tag fixa, e nao `latest`. Para publicar uma nova:
 
 ```bash
-docker build -t kaizenn/mechanic-shop-backend:obs-$(git rev-parse --short HEAD) .
-docker push kaizenn/mechanic-shop-backend:obs-$(git rev-parse --short HEAD)
-terraform apply -var="app_image=kaizenn/mechanic-shop-backend:obs-$(git rev-parse --short HEAD)"
+TAG=$(git rev-parse --short HEAD)
+docker build -t kaizenn/mechanic-shop-backend:$TAG .
+docker push kaizenn/mechanic-shop-backend:$TAG          # o apply falha com ImagePullBackOff sem isto
+terraform apply -var="app_image=kaizenn/mechanic-shop-backend:$TAG"
+```
+
+Para conferir o que esta de fato rodando (a tag no manifesto nao prova qual codigo subiu, se a
+tag for mutavel):
+
+```bash
+kubectl -n mechanic-shop get po -l app=mechanic-shop-backend -o jsonpath='{.items[*].spec.containers[*].image}{"\n"}'
 ```
 
 O apply leva de 15 a 20 minutos (a criacao do cluster e do node group domina o tempo). Ao final:
@@ -146,7 +155,7 @@ terraform destroy
 | Variavel | Default | Para que serve |
 | --- | --- | --- |
 | `lab_role_name` | `LabRole` | Role pre-existente do lab. Alguns labs usam outro nome. |
-| `app_image` | `kaizenn/mechanic-shop-backend:latest` | Imagem da API, de um registry publico. |
+| `app_image` | `kaizenn/mechanic-shop-backend:obs-b9c00c1` | Imagem da API, de um registry publico. Tag de commit, nao `latest`. |
 | `capacity_type` | `ON_DEMAND` | `SPOT` reduz o gasto de credito do lab. |
 | `nodeport_allowed_cidr` | `0.0.0.0/0` | Restrinja ao seu IP publico. |
 | `api_server_allowed_cidr` | `0.0.0.0/0` | Restrinja o endpoint do API server. |
@@ -154,7 +163,10 @@ terraform destroy
 | `newrelic_app_name` | `mechanic-shop (AWS Academy)` | `NEW_RELIC_APP_NAME` do agente Java. E o `app_name` que a stack de dashboards consulta. |
 | `write_observability_tfvars` | `true` | Gera `infra/newrelic/terraform/envs/aws-academy.tfvars`. |
 | `health_check_path` | `/actuator/health` | Path monitorado pelo Synthetics. |
-| `app_base_url` | `""` | Vazio usa `http://<ip-publico-do-node>:30080`. |
+| `app_base_url` | `""` | Vazio usa `http://<ip-publico-do-node>:30000`. |
+| `jwt_secret` | `local-dev-jwt-secret-change-me` | Segredo HS256 compartilhado entre a API e o consumer `jwt` do Kong. Troque fora de demo. |
+| `cpf_login_url` | invoke URL da Lambda | Destino da rota `/functions/cpf-login` no Kong. |
+| `kong_node_port` | `30000` | Porta publica da aplicacao nos IPs dos nodes. |
 | `imds_hop_limit` | `2` | Nao baixe para 1: quebra o `ebs-csi-controller`. |
 | `use_exec_auth` | `true` | `false` usa token estatico de 15min e quebra applies longos. |
 
@@ -188,7 +200,7 @@ novos e o dashboard continua apontando para o cluster certo.
 
 - **`AccessDenied` em `iam:*`** — o nome da role do lab nao e `LabRole`. Confira em `aws iam list-roles --query 'Roles[].RoleName'` e ajuste `lab_role_name`.
 - **Node group em `CREATE_FAILED` com `NodeCreationFailure`** — normalmente o node nao alcancou o API server. Verifique se as subnets estao com `map_public_ip_on_launch` e a route table com rota para o IGW (ja e o caso aqui).
-- **API nao responde no IP publico** — cheque `kubectl get svc -n mechanic-shop` (o NodePort deve ser 30080) e `curl http://<ip-do-node>:30080/actuator/health`. Se o pod estiver `Running` e o curl der timeout, o problema e a regra de seguranca: `aws ec2 describe-security-groups --group-ids $(aws eks describe-cluster --name eks-mechanic-shop --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' --output text)`.
+- **API nao responde no IP publico** — cheque `kubectl get svc -n mechanic-shop` (o NodePort e o do `kong`, 30000; a API e `ClusterIP` de proposito) e `curl http://<ip-do-node>:30000/actuator/health`. Se o pod estiver `Running` e o curl der timeout, o problema e a regra de seguranca: `aws ec2 describe-security-groups --group-ids $(aws eks describe-cluster --name eks-mechanic-shop --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' --output text)`.
 - **Addon EBS CSI preso em `CREATING` / PVC em `Pending`** — quase sempre e o hop limit do IMDS. Confirme com `kubectl get pods -n kube-system -l app=ebs-csi-controller`: se o container `ebs-plugin` estiver reiniciando enquanto o `ebs-csi-node` esta saudavel, e exatamente esse caso. Verifique o valor atual com `aws ec2 describe-instances --instance-ids <id-do-node> --query 'Reservations[].Instances[].MetadataOptions.HttpPutResponseHopLimit'`; tem que ser `2`.
 - **`ExpiredToken`** — recopie as credenciais do lab.
 - **`Unauthorized` no meio do apply, em algum `kubectl_manifest`** — nao e permissao, e o token de 15 minutos do `data.aws_eks_cluster_auth` expirando durante um apply longo. Os providers ja usam `exec` (`aws eks get-token`) por padrao para evitar isso; se voce tiver setado `use_exec_auth = false`, volte para `true`.

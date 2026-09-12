@@ -89,7 +89,7 @@ Cria o `Deployment` do Mailpit com uma replica e duas portas expostas, permitind
 
 ### `40-api-service.yaml`
 
-Cria o `Service` `NodePort` da API, expondo a aplicacao na porta `8080` do cluster e mapeando para o `nodePort` configurado no Terraform.
+Cria o `Service` `ClusterIP` da API na porta `8080`. Nao ha `nodePort`: desde a entrada do Kong, o unico caminho de fora para dentro do cluster e o proxy do gateway, de modo que nenhuma requisicao consiga driblar as rotas protegidas por JWT. Para depurar direto na API use `kubectl -n mechanic-shop port-forward svc/mechanic-shop-backend 8081:8080`.
 
 ### `41-api-deployment.yaml`
 
@@ -112,3 +112,23 @@ Cria o `HorizontalPodAutoscaler` da API com:
 - escala por utilizacao media de CPU.
 
 Esse manifesto depende funcionalmente do `metrics-server` e dos `requests` de CPU definidos em `41-api-deployment.yaml`. Na configuracao atual, a meta padrao foi ajustada para `80%`, reduzindo a agressividade do autoscaling em ambiente local.
+
+## Bloco API Gateway
+
+### `50-kong-service.yaml`
+
+Cria o `Service` `NodePort` do proxy do Kong (`8000` -> `nodePort` configurado no Terraform, `30000` por padrao). E a porta de entrada da aplicacao: o `cluster.tf` mapeia `localhost:8080` do host para este `nodePort`.
+
+### `51-kong-admin-service.yaml`
+
+Cria o `Service` `ClusterIP` da Admin API (`8001`). Fica interno de proposito: em modo DB-less ela e somente leitura, mas ainda expoe a configuracao inteira, incluindo o segredo do plugin `jwt`. Acesso por `kubectl -n mechanic-shop port-forward svc/kong-admin 8001:8001`.
+
+### `52-kong-deployment.yaml`
+
+Cria o `Deployment` do Kong em modo DB-less (`KONG_DATABASE=off`), montando o `ConfigMap` `kong-declarative-config` em `/kong/declarative`. O manifesto:
+
+- publica proxy (`8000`), Admin API (`8001`) e status (`8100`) em `0.0.0.0`;
+- usa a porta de status para `startupProbe`, `readinessProbe` e `livenessProbe`, que assim nao competem com o trafego do proxy;
+- carrega uma annotation `checksum/config` calculada pelo Terraform sobre o arquivo declarativo renderizado.
+
+O checksum existe porque o Kong le o `kong.yml` apenas no boot: sem ele, uma alteracao de rota so passaria a valer no proximo restart acidental do pod.
