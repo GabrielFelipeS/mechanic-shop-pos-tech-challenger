@@ -16,7 +16,7 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 
 COPY --from=newrelic-agent --chown=spring:spring /newrelic.jar /usr/local/newrelic/newrelic.jar
-COPY --chown=spring:spring ./infra/newrelic/newrelic.yml /usr/local/newrelic/newrelic.yml
+COPY --chown=spring:spring ./newrelic/newrelic.yml /usr/local/newrelic/newrelic.yml
 COPY --from=builder --chown=spring:spring /app/target/mechanic-shop-0.0.1-SNAPSHOT.jar app.jar
 
 USER spring:spring

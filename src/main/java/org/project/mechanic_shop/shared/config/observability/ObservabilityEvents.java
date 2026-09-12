@@ -2,7 +2,7 @@ package org.project.mechanic_shop.shared.config.observability;
 
 /**
  * Names of the custom New Relic events emitted by the application. The dashboards and alert
- * conditions in {@code infra/newrelic/terraform} query these event types by name, so renaming
+ * conditions in the infrastructure repository's observability Terraform module query these event types by name, so renaming
  * anything here means updating the NRQL there as well.
  */
 public final class ObservabilityEvents {

@@ -1,0 +1,15 @@
+# Entrada publica estavel do cluster. A AWS cria um load balancer e a API
+# continua ClusterIP, portanto todo trafego externo passa pelo Kong.
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: ${namespace}
+spec:
+  type: LoadBalancer
+  selector:
+    app: kong
+  ports:
+    - name: proxy
+      port: 8000
+      targetPort: 8000
