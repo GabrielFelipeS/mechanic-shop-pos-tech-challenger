@@ -1,0 +1,11 @@
+# New Relic Infrastructure agent — used by the local Docker Compose stack only.
+# In Kubernetes the infrastructure/Kubernetes telemetry comes from the nri-bundle Helm release
+# provisioned by Terraform (see infra/newrelic/terraform).
+#
+# The license key is NOT stored here: the agent reads it from the NRIA_LICENSE_KEY environment
+# variable, which docker-compose passes through from the .env file.
+enable_process_metrics: true
+status_server_enabled: true
+status_server_port: 18003
+custom_attributes:
+  nr_deployed_by: mechanic-shop

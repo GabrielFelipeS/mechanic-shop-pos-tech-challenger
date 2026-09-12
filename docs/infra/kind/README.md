@@ -55,7 +55,7 @@ Contem dois blocos principais:
 - `kind_cluster.this`: cria o cluster local com um `control-plane` e um `worker`;
 - `terraform_data.load_app_image`: opcionalmente executa `kind load docker-image` se `load_local_image=true`.
 
-O cluster mapeia portas do host para `NodePort`s internos da API e do Mailpit.
+O cluster mapeia portas do host para `NodePort`s internos do Kong (`localhost:8080`, a entrada da aplicacao) e do Mailpit. A API nao tem `NodePort`: seu `Service` e `ClusterIP` e o acesso externo passa obrigatoriamente pelo gateway.
 
 ### `manifests.tf`
 

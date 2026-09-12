@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <newrelic-api.version>9.4.0</newrelic-api.version>
     </properties>
     <dependencies>
 
@@ -92,6 +93,20 @@
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.5.1</version>
+        </dependency>
+
+        <!--        *****************************************************************-->
+        <!--        Observability (New Relic custom events / attributes)-->
+        <!--        Bundled on purpose instead of 'provided': this artifact is a no-op-->
+        <!--        implementation, so the application still runs without the -javaagent-->
+        <!--        (local `mvn spring-boot:run`, tests). When the agent IS attached it-->
+        <!--        publishes the real implementation on the bootstrap classpath, which-->
+        <!--        takes precedence over the bundled one.-->
+        <!--        *****************************************************************-->
+        <dependency>
+            <groupId>com.newrelic.agent.java</groupId>
+            <artifactId>newrelic-api</artifactId>
+            <version>${newrelic-api.version}</version>
         </dependency>
 
         <!--        *****************************************************************-->

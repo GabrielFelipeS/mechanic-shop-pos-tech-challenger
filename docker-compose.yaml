@@ -1,6 +1,7 @@
 networks:
   mechanic-shop-network:
-
+  newrelic-mechanic-shop:
+    driver: bridge
 services:
   postgres:
     image: postgres:17
@@ -17,7 +18,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mechanic-shop-db"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d mechanic-shop-db" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,9 +58,10 @@ services:
     container_name: springapp
     restart: always
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - mechanic-shop-network
+      - newrelic-mechanic-shop
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +69,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mechanic-shop-db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: mechanic-shop (Local)
+      NEW_RELIC_LABELS: env:local;service:mechanic-shop
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-me}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-internal-shared-secret-change-me}
 
       SEED_DEFAULT_PASSWORD: ${SEED_DEFAULT_PASSWORD}
       SEED_WH_NAME: ${SEED_WH_NAME}
@@ -99,6 +107,62 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+
+  kong:
+    image: kong:3.7
+    container_name: kong
+    restart: always
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      - "8000:8000"
+      - "127.0.0.1:8001:8001"
+    networks:
+      - mechanic-shop-network
+    depends_on:
+      - springapp
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      - db
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonarpassword
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_db_data:/var/lib/postgresql/data
+
+  newrelic:
+    container_name: newrelic-infra
+    build:
+      context: .
+      dockerfile: infra/newrelic/newrelic-infra.dockerfile
+    cap_add:
+      - SYS_PTRACE
+    pid: host
+    privileged: true
+    volumes:
+      - "/:/host:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      NRIA_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NRIA_DISPLAY_NAME: mechanic-shop-local
+    restart: unless-stopped
+    networks:
+      - newrelic-mechanic-shop
 
 volumes:
   postgres_data:

@@ -36,10 +36,30 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info
   endpoint:
     health:
       show-details: never
+      # Exposes /actuator/health/liveness and /actuator/health/readiness so the Kubernetes
+      # probes can check the application instead of just the TCP socket.
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
+  health:
+    # E-mail e um efeito colateral assincrono e nao critico: a OS e persistida com
+    # sucesso mesmo quando o SMTP esta fora, e a falha ja e reportada pelo evento
+    # MechanicShopIntegrationFailure (que tem alerta proprio). Manter o indicador
+    # ligado deixaria /actuator/health permanentemente em 503 com SMTP_ACTIVE=false,
+    # o que quebraria a metrica de uptime do Synthetics.
+    mail:
+      enabled: false
+  info:
+    env:
+      enabled: true
 
 springdoc:
   override-with-generic-response: false
@@ -50,7 +70,11 @@ springdoc:
 api:
   security:
     token:
-      secret: "234235negknsdg#$$@#@#"
+      secret: ${JWT_SECRET:local-dev-jwt-secret-change-me}
+
+internal:
+  api:
+    secret: ${INTERNAL_API_SECRET:internal-shared-secret-change-me}
 
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}

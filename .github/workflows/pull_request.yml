@@ -36,3 +36,33 @@ jobs:
 
       - name: Executar testes
         run: mvn test
+
+  # Valida os stacks de infraestrutura, incluindo o de observabilidade.
+  terraform-validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - infra/kind
+          - infra/aws
+          - infra/newrelic/terraform
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive ${{ matrix.stack }}
+
+      - name: Terraform init
+        run: terraform -chdir=${{ matrix.stack }} init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform -chdir=${{ matrix.stack }} validate

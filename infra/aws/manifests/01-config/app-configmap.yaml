@@ -7,6 +7,18 @@ data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/mechanic-shop-db"
   SPRING_DATASOURCE_USERNAME: "postgres"
   APP_BASE_URL: "http://localhost:8080"
+
+  # ---------- Observability ----------
+  # Activates application-prod.yaml, which turns on the structured (JSON) log format.
+  SPRING_PROFILES_ACTIVE: "prod"
+  APP_ENVIRONMENT: "production"
+  NEW_RELIC_APP_NAME: "mechanic-shop (Production)"
+  NEW_RELIC_LABELS: "env:production;service:mechanic-shop"
+  NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: "true"
+  NEW_RELIC_APPLICATION_LOGGING_ENABLED: "true"
+  NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED: "true"
+  NEW_RELIC_APPLICATION_LOGGING_METRICS_ENABLED: "true"
+  NEW_RELIC_LOG_FILE_NAME: "STDOUT"
   SEED_WH_NAME: "Warehouse Clerk"
   SEED_WH_EMAIL: "warehouse@shop.com"
   SEED_WH_DOC: "99729415006"

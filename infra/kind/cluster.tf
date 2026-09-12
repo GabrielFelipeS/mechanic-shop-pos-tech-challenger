@@ -9,9 +9,11 @@ resource "kind_cluster" "this" {
     node {
       role = "control-plane"
 
+      # A entrada da aplicacao e o Kong: o Service da API e ClusterIP e nao
+      # tem mapeamento de porta, entao nao ha como driblar o gateway.
       extra_port_mappings {
-        container_port = var.app_node_port
-        host_port      = var.app_host_port
+        container_port = var.kong_node_port
+        host_port      = var.kong_host_port
         protocol       = "TCP"
       }
 
