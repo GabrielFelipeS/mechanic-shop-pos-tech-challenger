@@ -88,5 +88,10 @@ jobs:
             --from-literal=JWT_SECRET="$jwt_secret" \
             --from-literal=NEW_RELIC_LICENSE_KEY="$NEW_RELIC_LICENSE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
+          # ConfigMaps and Secrets injected as environment variables are only
+          # read when a container starts. Restart both workloads so a rerun
+          # after changing GitHub configuration also takes effect.
+          kubectl rollout restart deployment/mechanic-shop-backend --namespace mechanic-shop
+          kubectl rollout restart deployment/kong --namespace mechanic-shop
           kubectl rollout status deployment/mechanic-shop-backend --namespace mechanic-shop --timeout=5m
           kubectl rollout status deployment/kong --namespace mechanic-shop --timeout=5m
