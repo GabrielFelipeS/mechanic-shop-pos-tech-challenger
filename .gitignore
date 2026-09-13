@@ -42,3 +42,10 @@ build/
 
 .env
 .codex
+
+### New Relic ###
+# The Java agent is downloaded at build time by the Dockerfile; never commit the binaries.
+infra/newrelic/newrelic.jar
+infra/newrelic/newrelic-java.zip
+infra/newrelic/newrelic/
+newrelic_agent.log

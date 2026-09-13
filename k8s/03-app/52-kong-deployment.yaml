@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: ${namespace}
+spec:
+  replicas: ${kong_replicas}
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+      annotations:
+        # Forca o rollout dos pods quando o kong.yml muda: o Kong le o arquivo
+        # declarativo apenas no boot, entao sem isto uma alteracao de rota so
+        # valeria no proximo restart acidental do pod.
+        checksum/config: "${kong_config_checksum}"
+    spec:
+      containers:
+        - name: kong
+          image: ${kong_image}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /kong/declarative/kong.yml
+            - name: KONG_PROXY_LISTEN
+              value: "0.0.0.0:8000"
+            # Sem `0.0.0.0` a Admin API escuta so em loopback e o probe/port-forward nao alcanca.
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
+            - name: KONG_STATUS_LISTEN
+              value: "0.0.0.0:8100"
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_ADMIN_ERROR_LOG
+              value: /dev/stderr
+          ports:
+            - name: proxy
+              containerPort: 8000
+            - name: admin
+              containerPort: 8001
+            - name: status
+              containerPort: 8100
+          volumeMounts:
+            - name: declarative-config
+              mountPath: /kong/declarative
+              readOnly: true
+          # A porta de status existe justamente para health check e nao serve
+          # trafego, entao os probes nao competem com o proxy.
+          startupProbe:
+            httpGet:
+              path: /status
+              port: 8100
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: ${kong_cpu_request}
+              memory: ${kong_memory_request}
+            limits:
+              cpu: ${kong_cpu_limit}
+              memory: ${kong_memory_limit}
+      volumes:
+        - name: declarative-config
+          configMap:
+            name: kong-declarative-config

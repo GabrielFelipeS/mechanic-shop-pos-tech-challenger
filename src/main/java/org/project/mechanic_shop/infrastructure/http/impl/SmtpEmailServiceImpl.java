@@ -4,6 +4,7 @@ import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.mechanic_shop.application.ports.EmailService;
+import org.project.mechanic_shop.shared.config.observability.ObservabilityReporter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class SmtpEmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final ObservabilityReporter observabilityReporter;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
@@ -54,10 +56,14 @@ public class SmtpEmailServiceImpl implements EmailService {
             }
         }
 
-        throw new IllegalStateException(
+        IllegalStateException failure = new IllegalStateException(
             "Failed to send email to " + Arrays.toString(to) + " after " + MAX_ATTEMPTS + " attempts",
             lastFailure
         );
+
+        observabilityReporter.recordIntegrationFailure("SMTP", "sendEmail", failure);
+
+        throw failure;
     }
 
     private void sleepBeforeRetry() {

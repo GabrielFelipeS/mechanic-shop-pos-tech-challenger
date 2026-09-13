@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.mechanic_shop.application.ports.EmailService;
 import org.project.mechanic_shop.infrastructure.http.impl.SmtpEmailServiceImpl;
+import org.project.mechanic_shop.shared.config.observability.ObservabilityReporter;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -29,9 +32,12 @@ class SmtpEmailServiceTest {
 	@Mock
 	private JavaMailSender mailSender;
 
+	@Mock
+	private ObservabilityReporter observabilityReporter;
+
 	@BeforeEach
 	void setup() {
-		service = new SmtpEmailServiceImpl(mailSender);
+		service = new SmtpEmailServiceImpl(mailSender, observabilityReporter);
 		ReflectionTestUtils.setField(service, "senderEmail", "system@mechanicshop.com");
 	}
 
@@ -60,6 +66,7 @@ class SmtpEmailServiceTest {
 			.hasCauseInstanceOf(MailSendException.class);
 
 		verify(mailSender, times(3)).send(any(SimpleMailMessage.class));
+		verify(observabilityReporter).recordIntegrationFailure(eq("SMTP"), eq("sendEmail"), any(IllegalStateException.class));
 	}
 
 	@Test
@@ -74,5 +81,6 @@ class SmtpEmailServiceTest {
 		).doesNotThrowAnyException();
 
 		verify(mailSender, times(2)).send(any(SimpleMailMessage.class));
+		verifyNoInteractions(observabilityReporter);
 	}
 }

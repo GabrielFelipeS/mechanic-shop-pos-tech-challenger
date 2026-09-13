@@ -1,0 +1,17 @@
+# ClusterIP: a API nao e mais exposta nos IPs publicos dos nodes. O unico
+# caminho de fora para dentro e o Service `kong` (NodePort), para que nenhuma
+# requisicao consiga driblar o gateway. Para depurar direto na API:
+#   kubectl -n ${namespace} port-forward svc/mechanic-shop-backend 8081:8080
+apiVersion: v1
+kind: Service
+metadata:
+  name: mechanic-shop-backend
+  namespace: ${namespace}
+spec:
+  type: ClusterIP
+  selector:
+    app: mechanic-shop-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
