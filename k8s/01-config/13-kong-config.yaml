@@ -97,14 +97,21 @@ data:
               - "/webjars"
 
       - name: cpf-login-function
-        # Invoke URL do API Gateway (HTTP API) da funcao cpf-login-lambda,
-        # stage $default, rota "POST /cpf-login".
-        url: ${cpf_login_url}
+        # Kong invokes the Terraform-managed Lambda directly. There is no API
+        # Gateway between the public Kong route and the function.
+        url: http://localhost
         routes:
           - name: cpf-login-route
             strip_path: true
             paths:
               - "/functions/cpf-login"
+        plugins:
+          - name: aws-lambda
+            config:
+              aws_region: ${aws_region}
+              function_name: ${lambda_function_name}
+              invocation_type: RequestResponse
+              awsgateway_compatible: true
 
     consumers:
       - username: mechanic-shop-users

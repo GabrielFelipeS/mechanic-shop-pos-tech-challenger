@@ -66,9 +66,10 @@ jobs:
           kong_memory_request: 128Mi
           kong_memory_limit: 512Mi
           app_base_url: ${{ vars.APP_BASE_URL }}
+          aws_region: ${{ vars.AWS_REGION }}
+          lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
           newrelic_app_name: ${{ vars.NEW_RELIC_APP_NAME }}
           jwt_secret: ${{ secrets.JWT_SECRET }}
-          cpf_login_url: ${{ vars.CPF_LOGIN_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
@@ -88,10 +89,5 @@ jobs:
             --from-literal=JWT_SECRET="$jwt_secret" \
             --from-literal=NEW_RELIC_LICENSE_KEY="$NEW_RELIC_LICENSE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
-          # ConfigMaps and Secrets injected as environment variables are only
-          # read when a container starts. Restart both workloads so a rerun
-          # after changing GitHub configuration also takes effect.
-          kubectl rollout restart deployment/mechanic-shop-backend --namespace mechanic-shop
-          kubectl rollout restart deployment/kong --namespace mechanic-shop
           kubectl rollout status deployment/mechanic-shop-backend --namespace mechanic-shop --timeout=5m
           kubectl rollout status deployment/kong --namespace mechanic-shop --timeout=5m
